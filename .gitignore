@@ -5,3 +5,6 @@ dist/
 *.log
 supabase/.temp/
 supabase/.branches/
+
+# Local Netlify folder
+.netlify
