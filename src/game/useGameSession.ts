@@ -32,6 +32,8 @@ export interface UseGameSessionOpts {
   mode: GameMode
   fen?: string
   tc?: TimeControl | null
+  /** moves to replay immediately from the start position (game load / review) */
+  initialUcis?: string[]
   /** colors the local user controls (both for pass & play) */
   myColors: Color[]
   /** which color counts as "me" for win/lose sounds; null = neutral */
@@ -44,7 +46,15 @@ export interface UseGameSessionOpts {
 export function useGameSession(opts: UseGameSessionOpts) {
   const coreRef = useRef<GameCore | null>(null)
   if (!coreRef.current) {
-    coreRef.current = new GameCore({ fen: opts.fen, tc: opts.tc ?? null, now: Date.now() })
+    const g = new GameCore({ fen: opts.fen, tc: opts.tc ?? null, now: Date.now() })
+    for (const uci of opts.initialUcis ?? []) {
+      try {
+        g.moveByUci(uci, Date.now())
+      } catch {
+        break // malformed line — keep what loaded
+      }
+    }
+    coreRef.current = g
   }
   const core = coreRef.current
   const [, force] = useReducer((n: number) => n + 1, 0)

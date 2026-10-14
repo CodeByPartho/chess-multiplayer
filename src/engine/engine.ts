@@ -137,10 +137,15 @@ export class Engine {
 
   dispose(): void {
     this.disposed = true
-    this.worker.postMessage('quit')
-    this.worker.terminate()
+    // no 'quit' — the wasm exit path throws inside the worker; terminate is instant
+    try {
+      this.worker.terminate()
+    } catch {
+      /* already dead */
+    }
     for (const j of this.queue) j.reject(new Error('Engine disposed'))
     this.queue = []
+    this.current = null
   }
 
   private pump(): void {
