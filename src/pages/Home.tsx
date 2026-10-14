@@ -110,7 +110,7 @@ export default function Home() {
                 const me = resultForMe(g)
                 const opp = g.myColor === 'w' ? g.black : g.white
                 return (
-                  <Link key={g.id} to={`/analysis`} className="chip" style={{ justifyContent: 'space-between', width: '100%' }}>
+                  <Link key={g.id} to={`/review/${g.id}`} className="chip" style={{ justifyContent: 'space-between', width: '100%' }}>
                     <span style={{ display: 'flex', gap: 8, alignItems: 'center', minWidth: 0 }}>
                       <span>{me === 'win' ? '✅' : me === 'loss' ? '❌' : g.result.winner ? '½' : '⏳'}</span>
                       <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{opp.name}</span>

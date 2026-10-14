@@ -45,6 +45,8 @@ export interface BoardProps {
   /** board editor: clicks place/erase the given piece */
   editorPiece?: { color: PieceColor; type: PieceType } | null
   onEditorPlace?: (square: string) => void
+  /** right-click target in editor mode (erase); falls back to onEditorPlace */
+  onEditorErase?: (square: string) => void
   /** keyboard cursor initially visible */
   keyboard?: boolean
   className?: string
@@ -149,6 +151,7 @@ export function Board({
   interactiveMarks = true,
   editorPiece,
   onEditorPlace,
+  onEditorErase,
   keyboard = false,
   className = '',
   ariaLabel = 'Chess board',
@@ -233,8 +236,8 @@ export function Board({
 
       // right button: draw arrows / marks
       if (e.button === 2) {
-        if (editing && onEditorPlace) {
-          onEditorPlace(sq) // erase with right click
+        if (editing) {
+          ;(onEditorErase ?? onEditorPlace)?.(sq)
           return
         }
         if (!interactiveMarks) return
@@ -244,7 +247,11 @@ export function Board({
       }
       if (e.button !== 0) return
 
-      ;(e.currentTarget as HTMLElement).setPointerCapture?.(e.pointerId)
+      try {
+        ;(e.currentTarget as HTMLElement).setPointerCapture?.(e.pointerId)
+      } catch {
+        /* synthetic events / capture unsupported */
+      }
 
       if (editing) {
         onEditorPlace?.(sq)
@@ -269,7 +276,7 @@ export function Board({
         setSelected(null)
       }
     },
-    [squareFromEvent, editing, onEditorPlace, interactiveMarks, isOwn, selected, targets, queueMove, promo],
+    [squareFromEvent, editing, onEditorPlace, onEditorErase, interactiveMarks, isOwn, selected, targets, queueMove, promo],
   )
 
   const onPointerMove = useCallback(
