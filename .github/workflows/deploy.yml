@@ -17,16 +17,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: npm
-      - run: npm ci
-      - run: npm run build
-        env:
-          VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
-          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
-      - run: npx --yes netlify-cli@27 deploy --prod --dir dist
+      # netlify deploy runs the build command from netlify.toml and injects
+      # the site's environment variables (VITE_SUPABASE_*) into it.
+      - run: npx --yes netlify-cli@27 deploy --prod
         env:
           NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
           NETLIFY_SITE_ID: 02599194-6783-48d1-b30d-4dfc8a61bba0
