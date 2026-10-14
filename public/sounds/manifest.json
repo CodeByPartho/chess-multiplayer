@@ -1,0 +1,52 @@
+[
+  {
+    "id": "move",
+    "file": "move.wav",
+    "label": "Move"
+  },
+  {
+    "id": "capture",
+    "file": "capture.wav",
+    "label": "Capture"
+  },
+  {
+    "id": "check",
+    "file": "check.wav",
+    "label": "Check"
+  },
+  {
+    "id": "castle",
+    "file": "castle.wav",
+    "label": "Castle"
+  },
+  {
+    "id": "start",
+    "file": "start.wav",
+    "label": "Game Start"
+  },
+  {
+    "id": "end-win",
+    "file": "end-win.wav",
+    "label": "Win"
+  },
+  {
+    "id": "end-lose",
+    "file": "end-lose.wav",
+    "label": "Lose"
+  },
+  {
+    "id": "end-draw",
+    "file": "end-draw.wav",
+    "label": "Draw"
+  },
+  {
+    "id": "lowtime",
+    "file": "lowtime.wav",
+    "label": "Low Time"
+  },
+  {
+    "id": "promote",
+    "file": "promote.wav",
+    "label": "Promotion"
+  }
+]

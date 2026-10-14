@@ -1,0 +1,23 @@
+cburnett chess piece set
+========================
+
+Author: Colin M.L. Burnett
+  https://en.wikipedia.org/wiki/User:Cburnett
+
+License: GNU General Public License version 2 or later (GPLv2+)
+  https://www.gnu.org/licenses/gpl-2.0.txt
+
+These SVG files are the unmodified "cburnett" piece set from the lichess
+board editor / lila project, where they are listed as a free exception to
+the project's AGPL license. Source:
+  https://github.com/lichess-org/lila/tree/master/public/piece/cburnett
+
+This licensing information was recorded from lila's COPYING.md:
+  https://github.com/lichess-org/lila/blob/master/COPYING.md
+("public/piece/cburnett | Colin M.L. Burnett | GPLv2+")
+
+As required by the GPL, the complete corresponding source of these works is
+available at the URL above. You may redistribute and/or modify these files
+under the terms of the GNU General Public License as published by the Free
+Software Foundation, either version 2 of the License, or (at your option) any
+later version.

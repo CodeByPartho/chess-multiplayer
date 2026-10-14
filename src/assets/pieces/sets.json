@@ -1,0 +1,30 @@
+[
+  {
+    "id": "cburnett",
+    "name": "CBurnett",
+    "license": "GPLv2+",
+    "author": "Colin M.L. Burnett",
+    "sourceUrl": "https://github.com/lichess-org/lila"
+  },
+  {
+    "id": "merida",
+    "name": "Merida",
+    "license": "GPLv2+",
+    "author": "Armando Hernandez Marroquin",
+    "sourceUrl": "https://github.com/lichess-org/lila"
+  },
+  {
+    "id": "fantasy",
+    "name": "Fantasy",
+    "license": "MIT",
+    "author": "Maurizio Monge",
+    "sourceUrl": "https://github.com/lichess-org/lila"
+  },
+  {
+    "id": "kiwen-suwi",
+    "name": "Kiwen Suwi",
+    "license": "CC BY 4.0",
+    "author": "Thibault Duplessis",
+    "sourceUrl": "https://github.com/lichess-org/lila"
+  }
+]
