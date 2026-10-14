@@ -1,0 +1,21 @@
+{
+  "name": "chess-multiplayer",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "engine:sync": "node scripts/sync-stockfish.mjs",
+    "prebuild": "node scripts/sync-stockfish.mjs",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.117.3",
+    "chess.js": "^1.4.0",
+    "stockfish": "^19.0.1"
+  },
+  "devDependencies": {
+    "vite": "^8.3.4"
+  }
+}
