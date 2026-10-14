@@ -1,21 +1,36 @@
 {
   "name": "chess-multiplayer",
   "private": true,
-  "version": "0.1.0",
+  "version": "1.0.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "engine:sync": "node scripts/sync-stockfish.mjs",
-    "prebuild": "node scripts/sync-stockfish.mjs",
-    "build": "vite build",
-    "preview": "vite preview"
+    "assets": "node scripts/gen-sounds.mjs && node scripts/gen-icons.mjs",
+    "prebuild": "node scripts/sync-stockfish.mjs && node scripts/gen-sounds.mjs && node scripts/gen-icons.mjs",
+    "build": "tsc -b && vite build",
+    "preview": "vite preview",
+    "test": "vitest run",
+    "test:e2e": "playwright test",
+    "typecheck": "tsc -b --noEmit"
   },
   "dependencies": {
-    "@supabase/supabase-js": "^2.117.3",
+    "@supabase/supabase-js": "^2.49.0",
     "chess.js": "^1.4.0",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
     "stockfish": "^19.0.1"
   },
   "devDependencies": {
-    "vite": "^8.3.4"
+    "@playwright/test": "^1.57.0",
+    "@types/node": "^26.6.5",
+    "@types/react": "^19.2.0",
+    "@types/react-dom": "^19.2.0",
+    "@vitejs/plugin-react": "^6.1.2",
+    "@vitest/coverage-v8": "^5.0.4",
+    "jsdom": "^30.1.2",
+    "typescript": "^5.9.0",
+    "vite": "^8.3.4",
+    "vitest": "^5.0.4"
   }
 }

@@ -1,0 +1,7 @@
+{
+  "id": "fantasy",
+  "name": "Fantasy",
+  "license": "MIT",
+  "author": "Maurizio Monge",
+  "sourceUrl": "https://github.com/lichess-org/lila/tree/master/public/piece/fantasy"
+}

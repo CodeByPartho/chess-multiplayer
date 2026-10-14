@@ -1,0 +1,1939 @@
+[
+ {
+  "fen": "7k/6pp/8/8/8/8/5K2/1R6 w - - 0 1",
+  "solution": [
+   "b1b8"
+  ],
+  "themes": [
+   "mateIn1",
+   "backRank"
+  ],
+  "rating": 479,
+  "title": "Back-rank mate on the b-file",
+  "id": "p001"
+ },
+ {
+  "fen": "7k/6pp/8/8/8/8/1K6/2R5 w - - 0 1",
+  "solution": [
+   "c1c8"
+  ],
+  "themes": [
+   "mateIn1",
+   "backRank"
+  ],
+  "rating": 612,
+  "title": "Back-rank mate on the c-file",
+  "id": "p002"
+ },
+ {
+  "fen": "7k/6pp/8/8/8/8/8/3R1K2 w - - 0 1",
+  "solution": [
+   "d1d8"
+  ],
+  "themes": [
+   "mateIn1",
+   "backRank"
+  ],
+  "rating": 478,
+  "title": "Back-rank mate on the d-file",
+  "id": "p003"
+ },
+ {
+  "fen": "7k/6pp/8/8/8/8/7K/4R3 w - - 0 1",
+  "solution": [
+   "e1e8"
+  ],
+  "themes": [
+   "mateIn1",
+   "backRank"
+  ],
+  "rating": 566,
+  "title": "Back-rank mate on the e-file",
+  "id": "p004"
+ },
+ {
+  "fen": "7k/6pp/8/8/8/8/7K/5R2 w - - 0 1",
+  "solution": [
+   "f1f8"
+  ],
+  "themes": [
+   "mateIn1",
+   "backRank"
+  ],
+  "rating": 439,
+  "title": "Back-rank mate on the f-file",
+  "id": "p005"
+ },
+ {
+  "fen": "7k/5ppp/8/8/8/8/4K3/R7 w - - 0 1",
+  "solution": [
+   "a1a8"
+  ],
+  "themes": [
+   "mateIn1",
+   "backRank"
+  ],
+  "rating": 459,
+  "title": "Back-rank mate on the a-file",
+  "id": "p006"
+ },
+ {
+  "fen": "7k/5ppp/8/8/8/8/7K/2R5 w - - 0 1",
+  "solution": [
+   "c1c8"
+  ],
+  "themes": [
+   "mateIn1",
+   "backRank"
+  ],
+  "rating": 699,
+  "title": "Back-rank mate on the c-file",
+  "id": "p007"
+ },
+ {
+  "fen": "7k/5ppp/8/8/8/8/8/3RK3 w - - 0 1",
+  "solution": [
+   "d1d8"
+  ],
+  "themes": [
+   "mateIn1",
+   "backRank"
+  ],
+  "rating": 687,
+  "title": "Back-rank mate on the d-file",
+  "id": "p008"
+ },
+ {
+  "fen": "7k/5ppp/8/8/8/8/6K1/4R3 w - - 0 1",
+  "solution": [
+   "e1e8"
+  ],
+  "themes": [
+   "mateIn1",
+   "backRank"
+  ],
+  "rating": 493,
+  "title": "Back-rank mate on the e-file",
+  "id": "p009"
+ },
+ {
+  "fen": "7k/4pppp/8/8/8/8/1K6/R7 w - - 0 1",
+  "solution": [
+   "a1a8"
+  ],
+  "themes": [
+   "mateIn1",
+   "backRank"
+  ],
+  "rating": 438,
+  "title": "Back-rank mate on the a-file",
+  "id": "p010"
+ },
+ {
+  "fen": "7k/4pppp/8/8/8/8/K7/1R6 w - - 0 1",
+  "solution": [
+   "b1b8"
+  ],
+  "themes": [
+   "mateIn1",
+   "backRank"
+  ],
+  "rating": 691,
+  "title": "Back-rank mate on the b-file",
+  "id": "p011"
+ },
+ {
+  "fen": "7k/4pppp/8/8/8/8/4K3/3R4 w - - 0 1",
+  "solution": [
+   "d1d8"
+  ],
+  "themes": [
+   "mateIn1",
+   "backRank"
+  ],
+  "rating": 450,
+  "title": "Back-rank mate on the d-file",
+  "id": "p012"
+ },
+ {
+  "fen": "6k1/5ppp/8/8/8/8/8/1RK5 w - - 0 1",
+  "solution": [
+   "b1b8"
+  ],
+  "themes": [
+   "mateIn1",
+   "backRank"
+  ],
+  "rating": 531,
+  "title": "Back-rank mate on the b-file",
+  "id": "p013"
+ },
+ {
+  "fen": "6k1/5ppp/8/8/8/8/8/2RK4 w - - 0 1",
+  "solution": [
+   "c1c8"
+  ],
+  "themes": [
+   "mateIn1",
+   "backRank"
+  ],
+  "rating": 594,
+  "title": "Back-rank mate on the c-file",
+  "id": "p014"
+ },
+ {
+  "fen": "6k1/5ppp/8/8/8/8/7K/3R4 w - - 0 1",
+  "solution": [
+   "d1d8"
+  ],
+  "themes": [
+   "mateIn1",
+   "backRank"
+  ],
+  "rating": 449,
+  "title": "Back-rank mate on the d-file",
+  "id": "p015"
+ },
+ {
+  "fen": "6k1/5ppp/8/8/8/8/2K5/4R3 w - - 0 1",
+  "solution": [
+   "e1e8"
+  ],
+  "themes": [
+   "mateIn1",
+   "backRank"
+  ],
+  "rating": 664,
+  "title": "Back-rank mate on the e-file",
+  "id": "p016"
+ },
+ {
+  "fen": "6k1/4pppp/8/8/8/8/4K3/R7 w - - 0 1",
+  "solution": [
+   "a1a8"
+  ],
+  "themes": [
+   "mateIn1",
+   "backRank"
+  ],
+  "rating": 594,
+  "title": "Back-rank mate on the a-file",
+  "id": "p017"
+ },
+ {
+  "fen": "6k1/4pppp/8/8/8/8/8/1R2K3 w - - 0 1",
+  "solution": [
+   "b1b8"
+  ],
+  "themes": [
+   "mateIn1",
+   "backRank"
+  ],
+  "rating": 597,
+  "title": "Back-rank mate on the b-file",
+  "id": "p018"
+ },
+ {
+  "fen": "6k1/4pppp/8/8/8/8/8/3R2K1 w - - 0 1",
+  "solution": [
+   "d1d8"
+  ],
+  "themes": [
+   "mateIn1",
+   "backRank"
+  ],
+  "rating": 471,
+  "title": "Back-rank mate on the d-file",
+  "id": "p019"
+ },
+ {
+  "fen": "7k/6pp/8/8/8/8/8/KQ6 w - - 0 1",
+  "solution": [
+   "b1b8"
+  ],
+  "themes": [
+   "mateIn1",
+   "corridor"
+  ],
+  "rating": 721,
+  "title": "Corridor queen mate",
+  "id": "p020"
+ },
+ {
+  "fen": "7k/6pp/8/8/8/8/K7/2Q5 w - - 0 1",
+  "solution": [
+   "c1c8"
+  ],
+  "themes": [
+   "mateIn1",
+   "corridor"
+  ],
+  "rating": 495,
+  "title": "Corridor queen mate",
+  "id": "p021"
+ },
+ {
+  "fen": "7k/6pp/8/8/8/8/2K5/3Q4 w - - 0 1",
+  "solution": [
+   "d1d8"
+  ],
+  "themes": [
+   "mateIn1",
+   "corridor"
+  ],
+  "rating": 665,
+  "title": "Corridor queen mate",
+  "id": "p022"
+ },
+ {
+  "fen": "7k/6pp/8/8/8/8/K7/4Q3 w - - 0 1",
+  "solution": [
+   "e1e8"
+  ],
+  "themes": [
+   "mateIn1",
+   "corridor"
+  ],
+  "rating": 548,
+  "title": "Corridor queen mate",
+  "id": "p023"
+ },
+ {
+  "fen": "7k/6pp/8/8/8/8/2K5/5Q2 w - - 0 1",
+  "solution": [
+   "f1f8"
+  ],
+  "themes": [
+   "mateIn1",
+   "corridor"
+  ],
+  "rating": 697,
+  "title": "Corridor queen mate",
+  "id": "p024"
+ },
+ {
+  "fen": "7k/6pp/8/8/8/8/1K6/7Q w - - 0 1",
+  "solution": [
+   "h1a8"
+  ],
+  "themes": [
+   "mateIn1",
+   "corridor"
+  ],
+  "rating": 508,
+  "title": "Corridor queen mate",
+  "id": "p025"
+ },
+ {
+  "fen": "7k/5ppp/8/8/8/8/8/1QK5 w - - 0 1",
+  "solution": [
+   "b1b8"
+  ],
+  "themes": [
+   "mateIn1",
+   "corridor"
+  ],
+  "rating": 754,
+  "title": "Corridor queen mate",
+  "id": "p026"
+ },
+ {
+  "fen": "7k/5ppp/8/8/8/8/1K6/3Q4 w - - 0 1",
+  "solution": [
+   "d1d8"
+  ],
+  "themes": [
+   "mateIn1",
+   "corridor"
+  ],
+  "rating": 667,
+  "title": "Corridor queen mate",
+  "id": "p027"
+ },
+ {
+  "fen": "7k/5ppp/8/8/8/8/8/2K1Q3 w - - 0 1",
+  "solution": [
+   "e1e8"
+  ],
+  "themes": [
+   "mateIn1",
+   "corridor"
+  ],
+  "rating": 553,
+  "title": "Corridor queen mate",
+  "id": "p028"
+ },
+ {
+  "fen": "7k/5ppp/8/8/8/8/2K5/7Q w - - 0 1",
+  "solution": [
+   "h1a8"
+  ],
+  "themes": [
+   "mateIn1",
+   "corridor"
+  ],
+  "rating": 483,
+  "title": "Corridor queen mate",
+  "id": "p029"
+ },
+ {
+  "fen": "7k/2p2ppp/8/8/8/8/2K5/1Q6 w - - 0 1",
+  "solution": [
+   "b1b8"
+  ],
+  "themes": [
+   "mateIn1",
+   "corridor"
+  ],
+  "rating": 525,
+  "title": "Corridor queen mate",
+  "id": "p030"
+ },
+ {
+  "fen": "7k/2p2ppp/8/8/8/8/1K6/3Q4 w - - 0 1",
+  "solution": [
+   "d1d8"
+  ],
+  "themes": [
+   "mateIn1",
+   "corridor"
+  ],
+  "rating": 528,
+  "title": "Corridor queen mate",
+  "id": "p031"
+ },
+ {
+  "fen": "7k/2p2ppp/8/8/8/8/1K6/4Q3 w - - 0 1",
+  "solution": [
+   "e1e8"
+  ],
+  "themes": [
+   "mateIn1",
+   "corridor"
+  ],
+  "rating": 578,
+  "title": "Corridor queen mate",
+  "id": "p032"
+ },
+ {
+  "fen": "7k/2p2ppp/8/8/8/8/2K5/7Q w - - 0 1",
+  "solution": [
+   "h1a8"
+  ],
+  "themes": [
+   "mateIn1",
+   "corridor"
+  ],
+  "rating": 777,
+  "title": "Corridor queen mate",
+  "id": "p033"
+ },
+ {
+  "fen": "6rk/6pp/3N4/8/8/8/8/K7 w - - 0 1",
+  "solution": [
+   "d6f7"
+  ],
+  "themes": [
+   "mateIn1",
+   "smothered"
+  ],
+  "rating": 1013,
+  "title": "Smothered mate",
+  "id": "p034"
+ },
+ {
+  "fen": "6rk/6pp/3N4/8/8/8/8/1K6 w - - 0 1",
+  "solution": [
+   "d6f7"
+  ],
+  "themes": [
+   "mateIn1",
+   "smothered"
+  ],
+  "rating": 847,
+  "title": "Smothered mate",
+  "id": "p035"
+ },
+ {
+  "fen": "6rk/6pp/3N4/8/8/8/8/2K5 w - - 0 1",
+  "solution": [
+   "d6f7"
+  ],
+  "themes": [
+   "mateIn1",
+   "smothered"
+  ],
+  "rating": 1010,
+  "title": "Smothered mate",
+  "id": "p036"
+ },
+ {
+  "fen": "6rk/6pp/3N4/8/8/8/K7/8 w - - 0 1",
+  "solution": [
+   "d6f7"
+  ],
+  "themes": [
+   "mateIn1",
+   "smothered"
+  ],
+  "rating": 729,
+  "title": "Smothered mate",
+  "id": "p037"
+ },
+ {
+  "fen": "6rk/6pp/3N4/8/8/8/1K6/8 w - - 0 1",
+  "solution": [
+   "d6f7"
+  ],
+  "themes": [
+   "mateIn1",
+   "smothered"
+  ],
+  "rating": 885,
+  "title": "Smothered mate",
+  "id": "p038"
+ },
+ {
+  "fen": "6rk/6pp/3N4/8/8/8/2K5/8 w - - 0 1",
+  "solution": [
+   "d6f7"
+  ],
+  "themes": [
+   "mateIn1",
+   "smothered"
+  ],
+  "rating": 882,
+  "title": "Smothered mate",
+  "id": "p039"
+ },
+ {
+  "fen": "6rk/6pp/3N4/8/8/8/3K4/8 w - - 0 1",
+  "solution": [
+   "d6f7"
+  ],
+  "themes": [
+   "mateIn1",
+   "smothered"
+  ],
+  "rating": 827,
+  "title": "Smothered mate",
+  "id": "p040"
+ },
+ {
+  "fen": "6rk/6pp/3N4/8/8/K7/8/8 w - - 0 1",
+  "solution": [
+   "d6f7"
+  ],
+  "themes": [
+   "mateIn1",
+   "smothered"
+  ],
+  "rating": 870,
+  "title": "Smothered mate",
+  "id": "p041"
+ },
+ {
+  "fen": "6rk/6pp/3N4/8/8/1K6/8/8 w - - 0 1",
+  "solution": [
+   "d6f7"
+  ],
+  "themes": [
+   "mateIn1",
+   "smothered"
+  ],
+  "rating": 777,
+  "title": "Smothered mate",
+  "id": "p042"
+ },
+ {
+  "fen": "6rk/6pp/3N4/8/8/2K5/8/8 w - - 0 1",
+  "solution": [
+   "d6f7"
+  ],
+  "themes": [
+   "mateIn1",
+   "smothered"
+  ],
+  "rating": 969,
+  "title": "Smothered mate",
+  "id": "p043"
+ },
+ {
+  "fen": "6rk/6pp/3N4/8/8/8/8/3K4 w - - 0 1",
+  "solution": [
+   "d6f7"
+  ],
+  "themes": [
+   "mateIn1",
+   "smothered"
+  ],
+  "rating": 829,
+  "title": "Smothered mate",
+  "id": "p044"
+ },
+ {
+  "fen": "6rk/6pp/8/4N3/8/8/8/K7 w - - 0 1",
+  "solution": [
+   "e5f7"
+  ],
+  "themes": [
+   "mateIn1",
+   "smothered"
+  ],
+  "rating": 814,
+  "title": "Smothered mate",
+  "id": "p045"
+ },
+ {
+  "fen": "6rk/6pp/8/4N3/8/8/8/1K6 w - - 0 1",
+  "solution": [
+   "e5f7"
+  ],
+  "themes": [
+   "mateIn1",
+   "smothered"
+  ],
+  "rating": 734,
+  "title": "Smothered mate",
+  "id": "p046"
+ },
+ {
+  "fen": "6rk/6pp/8/4N3/8/8/8/2K5 w - - 0 1",
+  "solution": [
+   "e5f7"
+  ],
+  "themes": [
+   "mateIn1",
+   "smothered"
+  ],
+  "rating": 869,
+  "title": "Smothered mate",
+  "id": "p047"
+ },
+ {
+  "fen": "8/kP6/8/K7/8/8/8/1R6 w - - 0 1",
+  "solution": [
+   "b7b8q"
+  ],
+  "themes": [
+   "mateIn1",
+   "promotion"
+  ],
+  "rating": 1051,
+  "title": "Promotion mate",
+  "id": "p048"
+ },
+ {
+  "fen": "8/kP6/8/K7/8/8/1R6/8 w - - 0 1",
+  "solution": [
+   "b7b8q"
+  ],
+  "themes": [
+   "mateIn1",
+   "promotion"
+  ],
+  "rating": 1001,
+  "title": "Promotion mate",
+  "id": "p049"
+ },
+ {
+  "fen": "8/kP6/8/K7/8/1R6/8/8 w - - 0 1",
+  "solution": [
+   "b7b8q"
+  ],
+  "themes": [
+   "mateIn1",
+   "promotion"
+  ],
+  "rating": 1060,
+  "title": "Promotion mate",
+  "id": "p050"
+ },
+ {
+  "fen": "8/kP6/8/K7/1R6/8/8/8 w - - 0 1",
+  "solution": [
+   "b7b8q"
+  ],
+  "themes": [
+   "mateIn1",
+   "promotion"
+  ],
+  "rating": 977,
+  "title": "Promotion mate",
+  "id": "p051"
+ },
+ {
+  "fen": "8/kP1p4/8/K7/8/8/8/1R6 w - - 0 1",
+  "solution": [
+   "b7b8q"
+  ],
+  "themes": [
+   "mateIn1",
+   "promotion"
+  ],
+  "rating": 871,
+  "title": "Promotion mate",
+  "id": "p052"
+ },
+ {
+  "fen": "8/kP1p4/8/K7/8/8/1R6/8 w - - 0 1",
+  "solution": [
+   "b7b8q"
+  ],
+  "themes": [
+   "mateIn1",
+   "promotion"
+  ],
+  "rating": 871,
+  "title": "Promotion mate",
+  "id": "p053"
+ },
+ {
+  "fen": "8/kP1p4/8/K7/8/1R6/8/8 w - - 0 1",
+  "solution": [
+   "b7b8q"
+  ],
+  "themes": [
+   "mateIn1",
+   "promotion"
+  ],
+  "rating": 1091,
+  "title": "Promotion mate",
+  "id": "p054"
+ },
+ {
+  "fen": "8/kP1p4/8/K7/1R6/8/8/8 w - - 0 1",
+  "solution": [
+   "b7b8q"
+  ],
+  "themes": [
+   "mateIn1",
+   "promotion"
+  ],
+  "rating": 971,
+  "title": "Promotion mate",
+  "id": "p055"
+ },
+ {
+  "fen": "8/kP2pp2/8/K7/8/8/8/1R6 w - - 0 1",
+  "solution": [
+   "b7b8q"
+  ],
+  "themes": [
+   "mateIn1",
+   "promotion"
+  ],
+  "rating": 897,
+  "title": "Promotion mate",
+  "id": "p056"
+ },
+ {
+  "fen": "8/kP2pp2/8/K7/8/8/1R6/8 w - - 0 1",
+  "solution": [
+   "b7b8q"
+  ],
+  "themes": [
+   "mateIn1",
+   "promotion"
+  ],
+  "rating": 898,
+  "title": "Promotion mate",
+  "id": "p057"
+ },
+ {
+  "fen": "8/kP2pp2/8/K7/8/1R6/8/8 w - - 0 1",
+  "solution": [
+   "b7b8q"
+  ],
+  "themes": [
+   "mateIn1",
+   "promotion"
+  ],
+  "rating": 1036,
+  "title": "Promotion mate",
+  "id": "p058"
+ },
+ {
+  "fen": "8/kP2pp2/8/K7/1R6/8/8/8 w - - 0 1",
+  "solution": [
+   "b7b8q"
+  ],
+  "themes": [
+   "mateIn1",
+   "promotion"
+  ],
+  "rating": 1026,
+  "title": "Promotion mate",
+  "id": "p059"
+ },
+ {
+  "fen": "7R/8/8/8/k7/8/5K2/1R6 w - - 0 1",
+  "solution": [
+   "h8a8"
+  ],
+  "themes": [
+   "mateIn1",
+   "ladder"
+  ],
+  "rating": 781,
+  "title": "Ladder mate",
+  "id": "p060"
+ },
+ {
+  "fen": "7R/8/8/8/k7/8/1R3K2/8 w - - 0 1",
+  "solution": [
+   "h8a8"
+  ],
+  "themes": [
+   "mateIn1",
+   "ladder"
+  ],
+  "rating": 798,
+  "title": "Ladder mate",
+  "id": "p061"
+ },
+ {
+  "fen": "7R/8/1R6/8/k7/8/5K2/8 w - - 0 1",
+  "solution": [
+   "h8a8"
+  ],
+  "themes": [
+   "mateIn1",
+   "ladder"
+  ],
+  "rating": 720,
+  "title": "Ladder mate",
+  "id": "p062"
+ },
+ {
+  "fen": "7R/1R6/8/8/k7/8/5K2/8 w - - 0 1",
+  "solution": [
+   "h8a8"
+  ],
+  "themes": [
+   "mateIn1",
+   "ladder"
+  ],
+  "rating": 671,
+  "title": "Ladder mate",
+  "id": "p063"
+ },
+ {
+  "fen": "7R/8/8/k7/8/8/5K2/1R6 w - - 0 1",
+  "solution": [
+   "h8a8"
+  ],
+  "themes": [
+   "mateIn1",
+   "ladder"
+  ],
+  "rating": 698,
+  "title": "Ladder mate",
+  "id": "p064"
+ },
+ {
+  "fen": "7R/8/8/k7/8/8/1R3K2/8 w - - 0 1",
+  "solution": [
+   "h8a8"
+  ],
+  "themes": [
+   "mateIn1",
+   "ladder"
+  ],
+  "rating": 599,
+  "title": "Ladder mate",
+  "id": "p065"
+ },
+ {
+  "fen": "7R/8/8/k7/8/1R6/5K2/8 w - - 0 1",
+  "solution": [
+   "h8a8"
+  ],
+  "themes": [
+   "mateIn1",
+   "ladder"
+  ],
+  "rating": 716,
+  "title": "Ladder mate",
+  "id": "p066"
+ },
+ {
+  "fen": "7R/1R6/8/k7/8/8/5K2/8 w - - 0 1",
+  "solution": [
+   "h8a8"
+  ],
+  "themes": [
+   "mateIn1",
+   "ladder"
+  ],
+  "rating": 707,
+  "title": "Ladder mate",
+  "id": "p067"
+ },
+ {
+  "fen": "7R/8/k7/8/8/8/5K2/1R6 w - - 0 1",
+  "solution": [
+   "h8a8"
+  ],
+  "themes": [
+   "mateIn1",
+   "ladder"
+  ],
+  "rating": 794,
+  "title": "Ladder mate",
+  "id": "p068"
+ },
+ {
+  "fen": "7R/8/k7/8/8/8/1R3K2/8 w - - 0 1",
+  "solution": [
+   "h8a8"
+  ],
+  "themes": [
+   "mateIn1",
+   "ladder"
+  ],
+  "rating": 597,
+  "title": "Ladder mate",
+  "id": "p069"
+ },
+ {
+  "fen": "7R/8/k7/8/8/1R6/5K2/8 w - - 0 1",
+  "solution": [
+   "h8a8"
+  ],
+  "themes": [
+   "mateIn1",
+   "ladder"
+  ],
+  "rating": 586,
+  "title": "Ladder mate",
+  "id": "p070"
+ },
+ {
+  "fen": "7R/8/k7/8/1R6/8/5K2/8 w - - 0 1",
+  "solution": [
+   "h8a8"
+  ],
+  "themes": [
+   "mateIn1",
+   "ladder"
+  ],
+  "rating": 687,
+  "title": "Ladder mate",
+  "id": "p071"
+ },
+ {
+  "fen": "7R/8/8/8/8/k7/5K2/1R6 w - - 0 1",
+  "solution": [
+   "h8a8"
+  ],
+  "themes": [
+   "mateIn1",
+   "ladder"
+  ],
+  "rating": 548,
+  "title": "Ladder mate",
+  "id": "p072"
+ },
+ {
+  "fen": "7R/8/8/1R6/8/k7/5K2/8 w - - 0 1",
+  "solution": [
+   "h8a8"
+  ],
+  "themes": [
+   "mateIn1",
+   "ladder"
+  ],
+  "rating": 650,
+  "title": "Ladder mate",
+  "id": "p073"
+ },
+ {
+  "fen": "8/8/8/8/8/K7/2R5/k7 w - - 0 1",
+  "solution": [
+   "c2c1"
+  ],
+  "themes": [
+   "mateIn1",
+   "krEndgame"
+  ],
+  "rating": 707,
+  "title": "Rook and king mate",
+  "id": "p074"
+ },
+ {
+  "fen": "8/8/8/8/8/K1R5/8/k7 w - - 0 1",
+  "solution": [
+   "c3c1"
+  ],
+  "themes": [
+   "mateIn1",
+   "krEndgame"
+  ],
+  "rating": 764,
+  "title": "Rook and king mate",
+  "id": "p075"
+ },
+ {
+  "fen": "8/8/8/8/2R5/K7/8/k7 w - - 0 1",
+  "solution": [
+   "c4c1"
+  ],
+  "themes": [
+   "mateIn1",
+   "krEndgame"
+  ],
+  "rating": 821,
+  "title": "Rook and king mate",
+  "id": "p076"
+ },
+ {
+  "fen": "8/8/8/2R5/8/K7/8/k7 w - - 0 1",
+  "solution": [
+   "c5c1"
+  ],
+  "themes": [
+   "mateIn1",
+   "krEndgame"
+  ],
+  "rating": 744,
+  "title": "Rook and king mate",
+  "id": "p077"
+ },
+ {
+  "fen": "8/8/2R5/8/8/K7/8/k7 w - - 0 1",
+  "solution": [
+   "c6c1"
+  ],
+  "themes": [
+   "mateIn1",
+   "krEndgame"
+  ],
+  "rating": 764,
+  "title": "Rook and king mate",
+  "id": "p078"
+ },
+ {
+  "fen": "8/2R5/8/8/8/K7/8/k7 w - - 0 1",
+  "solution": [
+   "c7c1"
+  ],
+  "themes": [
+   "mateIn1",
+   "krEndgame"
+  ],
+  "rating": 643,
+  "title": "Rook and king mate",
+  "id": "p079"
+ },
+ {
+  "fen": "2R5/8/8/8/8/K7/8/k7 w - - 0 1",
+  "solution": [
+   "c8c1"
+  ],
+  "themes": [
+   "mateIn1",
+   "krEndgame"
+  ],
+  "rating": 637,
+  "title": "Rook and king mate",
+  "id": "p080"
+ },
+ {
+  "fen": "8/8/8/8/8/K7/3R4/k7 w - - 0 1",
+  "solution": [
+   "d2d1"
+  ],
+  "themes": [
+   "mateIn1",
+   "krEndgame"
+  ],
+  "rating": 619,
+  "title": "Rook and king mate",
+  "id": "p081"
+ },
+ {
+  "fen": "8/8/8/8/8/K2R4/8/k7 w - - 0 1",
+  "solution": [
+   "d3d1"
+  ],
+  "themes": [
+   "mateIn1",
+   "krEndgame"
+  ],
+  "rating": 646,
+  "title": "Rook and king mate",
+  "id": "p082"
+ },
+ {
+  "fen": "8/8/8/8/3R4/K7/8/k7 w - - 0 1",
+  "solution": [
+   "d4d1"
+  ],
+  "themes": [
+   "mateIn1",
+   "krEndgame"
+  ],
+  "rating": 717,
+  "title": "Rook and king mate",
+  "id": "p083"
+ },
+ {
+  "fen": "8/8/8/3R4/8/K7/8/k7 w - - 0 1",
+  "solution": [
+   "d5d1"
+  ],
+  "themes": [
+   "mateIn1",
+   "krEndgame"
+  ],
+  "rating": 747,
+  "title": "Rook and king mate",
+  "id": "p084"
+ },
+ {
+  "fen": "8/8/3R4/8/8/K7/8/k7 w - - 0 1",
+  "solution": [
+   "d6d1"
+  ],
+  "themes": [
+   "mateIn1",
+   "krEndgame"
+  ],
+  "rating": 763,
+  "title": "Rook and king mate",
+  "id": "p085"
+ },
+ {
+  "fen": "8/3R4/8/8/8/K7/8/k7 w - - 0 1",
+  "solution": [
+   "d7d1"
+  ],
+  "themes": [
+   "mateIn1",
+   "krEndgame"
+  ],
+  "rating": 772,
+  "title": "Rook and king mate",
+  "id": "p086"
+ },
+ {
+  "fen": "3R4/8/8/8/8/K7/8/k7 w - - 0 1",
+  "solution": [
+   "d8d1"
+  ],
+  "themes": [
+   "mateIn1",
+   "krEndgame"
+  ],
+  "rating": 750,
+  "title": "Rook and king mate",
+  "id": "p087"
+ },
+ {
+  "fen": "8/8/8/8/Q7/K7/8/k7 w - - 0 1",
+  "solution": [
+   "a4d1"
+  ],
+  "themes": [
+   "mateIn1",
+   "kqEndgame"
+  ],
+  "rating": 707,
+  "title": "Queen and king mate",
+  "id": "p088"
+ },
+ {
+  "fen": "8/8/8/Q7/8/K7/8/k7 w - - 0 1",
+  "solution": [
+   "a5e1"
+  ],
+  "themes": [
+   "mateIn1",
+   "kqEndgame"
+  ],
+  "rating": 553,
+  "title": "Queen and king mate",
+  "id": "p089"
+ },
+ {
+  "fen": "8/8/Q7/8/8/K7/8/k7 w - - 0 1",
+  "solution": [
+   "a6f1"
+  ],
+  "themes": [
+   "mateIn1",
+   "kqEndgame"
+  ],
+  "rating": 644,
+  "title": "Queen and king mate",
+  "id": "p090"
+ },
+ {
+  "fen": "8/Q7/8/8/8/K7/8/k7 w - - 0 1",
+  "solution": [
+   "a7g1"
+  ],
+  "themes": [
+   "mateIn1",
+   "kqEndgame"
+  ],
+  "rating": 588,
+  "title": "Queen and king mate",
+  "id": "p091"
+ },
+ {
+  "fen": "Q7/8/8/8/8/K7/8/k7 w - - 0 1",
+  "solution": [
+   "a8h1"
+  ],
+  "themes": [
+   "mateIn1",
+   "kqEndgame"
+  ],
+  "rating": 541,
+  "title": "Queen and king mate",
+  "id": "p092"
+ },
+ {
+  "fen": "8/8/8/8/8/KQ6/8/k7 w - - 0 1",
+  "solution": [
+   "b3a2"
+  ],
+  "themes": [
+   "mateIn1",
+   "kqEndgame"
+  ],
+  "rating": 622,
+  "title": "Queen and king mate",
+  "id": "p093"
+ },
+ {
+  "fen": "8/8/8/8/1Q6/K7/8/k7 w - - 0 1",
+  "solution": [
+   "b4e1"
+  ],
+  "themes": [
+   "mateIn1",
+   "kqEndgame"
+  ],
+  "rating": 609,
+  "title": "Queen and king mate",
+  "id": "p094"
+ },
+ {
+  "fen": "8/8/8/1Q6/8/K7/8/k7 w - - 0 1",
+  "solution": [
+   "b5f1"
+  ],
+  "themes": [
+   "mateIn1",
+   "kqEndgame"
+  ],
+  "rating": 716,
+  "title": "Queen and king mate",
+  "id": "p095"
+ },
+ {
+  "fen": "8/8/1Q6/8/8/K7/8/k7 w - - 0 1",
+  "solution": [
+   "b6b2"
+  ],
+  "themes": [
+   "mateIn1",
+   "kqEndgame"
+  ],
+  "rating": 613,
+  "title": "Queen and king mate",
+  "id": "p096"
+ },
+ {
+  "fen": "8/1Q6/8/8/8/K7/8/k7 w - - 0 1",
+  "solution": [
+   "b7b2"
+  ],
+  "themes": [
+   "mateIn1",
+   "kqEndgame"
+  ],
+  "rating": 605,
+  "title": "Queen and king mate",
+  "id": "p097"
+ },
+ {
+  "fen": "1Q6/8/8/8/8/K7/8/k7 w - - 0 1",
+  "solution": [
+   "b8b2"
+  ],
+  "themes": [
+   "mateIn1",
+   "kqEndgame"
+  ],
+  "rating": 732,
+  "title": "Queen and king mate",
+  "id": "p098"
+ },
+ {
+  "fen": "8/8/8/8/8/K7/2Q5/k7 w - - 0 1",
+  "solution": [
+   "c2c1"
+  ],
+  "themes": [
+   "mateIn1",
+   "kqEndgame"
+  ],
+  "rating": 543,
+  "title": "Queen and king mate",
+  "id": "p099"
+ },
+ {
+  "fen": "8/8/8/8/2Q5/K7/8/k7 w - - 0 1",
+  "solution": [
+   "c4a2"
+  ],
+  "themes": [
+   "mateIn1",
+   "kqEndgame"
+  ],
+  "rating": 602,
+  "title": "Queen and king mate",
+  "id": "p100"
+ },
+ {
+  "fen": "8/8/8/2Q5/8/K7/8/k7 w - - 0 1",
+  "solution": [
+   "c5g1"
+  ],
+  "themes": [
+   "mateIn1",
+   "kqEndgame"
+  ],
+  "rating": 687,
+  "title": "Queen and king mate",
+  "id": "p101"
+ },
+ {
+  "fen": "6r1/2k5/8/8/8/8/PP6/K7 b - - 0 1",
+  "solution": [
+   "g8g1"
+  ],
+  "themes": [
+   "mateIn1",
+   "backRank"
+  ],
+  "rating": 519,
+  "title": "Back-rank mate on the b-file",
+  "id": "p102"
+ },
+ {
+  "fen": "5r2/6k1/8/8/8/8/PP6/K7 b - - 0 1",
+  "solution": [
+   "f8f1"
+  ],
+  "themes": [
+   "mateIn1",
+   "backRank"
+  ],
+  "rating": 652,
+  "title": "Back-rank mate on the c-file",
+  "id": "p103"
+ },
+ {
+  "fen": "2k1r3/8/8/8/8/8/PP6/K7 b - - 0 1",
+  "solution": [
+   "e8e1"
+  ],
+  "themes": [
+   "mateIn1",
+   "backRank"
+  ],
+  "rating": 518,
+  "title": "Back-rank mate on the d-file",
+  "id": "p104"
+ },
+ {
+  "fen": "2r5/k7/8/8/8/8/PP6/K7 b - - 0 1",
+  "solution": [
+   "c8c1"
+  ],
+  "themes": [
+   "mateIn1",
+   "backRank"
+  ],
+  "rating": 479,
+  "title": "Back-rank mate on the f-file",
+  "id": "p105"
+ },
+ {
+  "fen": "7r/3k4/8/8/8/8/PPP5/K7 b - - 0 1",
+  "solution": [
+   "h8h1"
+  ],
+  "themes": [
+   "mateIn1",
+   "backRank"
+  ],
+  "rating": 499,
+  "title": "Back-rank mate on the a-file",
+  "id": "p106"
+ },
+ {
+  "fen": "5r2/k7/8/8/8/8/PPP5/K7 b - - 0 1",
+  "solution": [
+   "f8f1"
+  ],
+  "themes": [
+   "mateIn1",
+   "backRank"
+  ],
+  "rating": 739,
+  "title": "Back-rank mate on the c-file",
+  "id": "p107"
+ },
+ {
+  "fen": "3kr3/8/8/8/8/8/PPP5/K7 b - - 0 1",
+  "solution": [
+   "e8e1"
+  ],
+  "themes": [
+   "mateIn1",
+   "backRank"
+  ],
+  "rating": 727,
+  "title": "Back-rank mate on the d-file",
+  "id": "p108"
+ },
+ {
+  "fen": "3r4/1k6/8/8/8/8/PPP5/K7 b - - 0 1",
+  "solution": [
+   "d8d1"
+  ],
+  "themes": [
+   "mateIn1",
+   "backRank"
+  ],
+  "rating": 533,
+  "title": "Back-rank mate on the e-file",
+  "id": "p109"
+ },
+ {
+  "fen": "6r1/7k/8/8/8/8/PPPP4/K7 b - - 0 1",
+  "solution": [
+   "g8g1"
+  ],
+  "themes": [
+   "mateIn1",
+   "backRank"
+  ],
+  "rating": 731,
+  "title": "Back-rank mate on the b-file",
+  "id": "p110"
+ },
+ {
+  "fen": "5kr1/8/8/8/8/8/PPP5/1K6 b - - 0 1",
+  "solution": [
+   "g8g1"
+  ],
+  "themes": [
+   "mateIn1",
+   "backRank"
+  ],
+  "rating": 571,
+  "title": "Back-rank mate on the b-file",
+  "id": "p111"
+ },
+ {
+  "fen": "4kr2/8/8/8/8/8/PPP5/1K6 b - - 0 1",
+  "solution": [
+   "f8f1"
+  ],
+  "themes": [
+   "mateIn1",
+   "backRank"
+  ],
+  "rating": 634,
+  "title": "Back-rank mate on the c-file",
+  "id": "p112"
+ },
+ {
+  "fen": "3k2r1/8/8/8/8/8/PPPP4/1K6 b - - 0 1",
+  "solution": [
+   "g8g1"
+  ],
+  "themes": [
+   "mateIn1",
+   "backRank"
+  ],
+  "rating": 637,
+  "title": "Back-rank mate on the b-file",
+  "id": "p113"
+ },
+ {
+  "fen": "1k2r3/8/8/8/8/8/PPPP4/1K6 b - - 0 1",
+  "solution": [
+   "e8e1"
+  ],
+  "themes": [
+   "mateIn1",
+   "backRank"
+  ],
+  "rating": 511,
+  "title": "Back-rank mate on the d-file",
+  "id": "p114"
+ },
+ {
+  "fen": "4q3/5k2/8/8/8/8/PP6/K7 b - - 0 1",
+  "solution": [
+   "e8e1"
+  ],
+  "themes": [
+   "mateIn1",
+   "corridor"
+  ],
+  "rating": 705,
+  "title": "Corridor queen mate",
+  "id": "p115"
+ },
+ {
+  "fen": "q7/5k2/8/8/8/8/PPP5/K7 b - - 0 1",
+  "solution": [
+   "a8h1"
+  ],
+  "themes": [
+   "mateIn1",
+   "corridor"
+  ],
+  "rating": 523,
+  "title": "Corridor queen mate",
+  "id": "p116"
+ },
+ {
+  "fen": "3q4/6k1/8/8/8/8/PPP2P2/K7 b - - 0 1",
+  "solution": [
+   "d8d1"
+  ],
+  "themes": [
+   "mateIn1",
+   "corridor"
+  ],
+  "rating": 618,
+  "title": "Corridor queen mate",
+  "id": "p117"
+ },
+ {
+  "fen": "q7/5k2/8/8/8/8/PPP2P2/K7 b - - 0 1",
+  "solution": [
+   "a8h1"
+  ],
+  "themes": [
+   "mateIn1",
+   "corridor"
+  ],
+  "rating": 817,
+  "title": "Corridor queen mate",
+  "id": "p118"
+ },
+ {
+  "fen": "7k/8/8/8/8/4n3/PP6/KR6 b - - 0 1",
+  "solution": [
+   "e3c2"
+  ],
+  "themes": [
+   "mateIn1",
+   "smothered"
+  ],
+  "rating": 1053,
+  "title": "Smothered mate",
+  "id": "p119"
+ },
+ {
+  "fen": "5k2/8/8/8/8/4n3/PP6/KR6 b - - 0 1",
+  "solution": [
+   "e3c2"
+  ],
+  "themes": [
+   "mateIn1",
+   "smothered"
+  ],
+  "rating": 1050,
+  "title": "Smothered mate",
+  "id": "p120"
+ },
+ {
+  "fen": "8/7k/8/8/8/4n3/PP6/KR6 b - - 0 1",
+  "solution": [
+   "e3c2"
+  ],
+  "themes": [
+   "mateIn1",
+   "smothered"
+  ],
+  "rating": 769,
+  "title": "Smothered mate",
+  "id": "p121"
+ },
+ {
+  "fen": "8/6k1/8/8/8/4n3/PP6/KR6 b - - 0 1",
+  "solution": [
+   "e3c2"
+  ],
+  "themes": [
+   "mateIn1",
+   "smothered"
+  ],
+  "rating": 925,
+  "title": "Smothered mate",
+  "id": "p122"
+ },
+ {
+  "fen": "8/5k2/8/8/8/4n3/PP6/KR6 b - - 0 1",
+  "solution": [
+   "e3c2"
+  ],
+  "themes": [
+   "mateIn1",
+   "smothered"
+  ],
+  "rating": 922,
+  "title": "Smothered mate",
+  "id": "p123"
+ },
+ {
+  "fen": "8/4k3/8/8/8/4n3/PP6/KR6 b - - 0 1",
+  "solution": [
+   "e3c2"
+  ],
+  "themes": [
+   "mateIn1",
+   "smothered"
+  ],
+  "rating": 867,
+  "title": "Smothered mate",
+  "id": "p124"
+ },
+ {
+  "fen": "8/8/6k1/8/8/4n3/PP6/KR6 b - - 0 1",
+  "solution": [
+   "e3c2"
+  ],
+  "themes": [
+   "mateIn1",
+   "smothered"
+  ],
+  "rating": 817,
+  "title": "Smothered mate",
+  "id": "p125"
+ },
+ {
+  "fen": "8/8/5k2/8/8/4n3/PP6/KR6 b - - 0 1",
+  "solution": [
+   "e3c2"
+  ],
+  "themes": [
+   "mateIn1",
+   "smothered"
+  ],
+  "rating": 1009,
+  "title": "Smothered mate",
+  "id": "p126"
+ },
+ {
+  "fen": "4k3/8/8/8/8/4n3/PP6/KR6 b - - 0 1",
+  "solution": [
+   "e3c2"
+  ],
+  "themes": [
+   "mateIn1",
+   "smothered"
+  ],
+  "rating": 869,
+  "title": "Smothered mate",
+  "id": "p127"
+ },
+ {
+  "fen": "7k/8/8/8/3n4/8/PP6/KR6 b - - 0 1",
+  "solution": [
+   "d4c2"
+  ],
+  "themes": [
+   "mateIn1",
+   "smothered"
+  ],
+  "rating": 854,
+  "title": "Smothered mate",
+  "id": "p128"
+ },
+ {
+  "fen": "6k1/8/8/8/3n4/8/PP6/KR6 b - - 0 1",
+  "solution": [
+   "d4c2"
+  ],
+  "themes": [
+   "mateIn1",
+   "smothered"
+  ],
+  "rating": 774,
+  "title": "Smothered mate",
+  "id": "p129"
+ },
+ {
+  "fen": "5k2/8/8/8/3n4/8/PP6/KR6 b - - 0 1",
+  "solution": [
+   "d4c2"
+  ],
+  "themes": [
+   "mateIn1",
+   "smothered"
+  ],
+  "rating": 909,
+  "title": "Smothered mate",
+  "id": "p130"
+ },
+ {
+  "fen": "6r1/8/8/8/7k/8/6pK/8 b - - 0 1",
+  "solution": [
+   "g2g1q"
+  ],
+  "themes": [
+   "mateIn1",
+   "promotion"
+  ],
+  "rating": 1091,
+  "title": "Promotion mate",
+  "id": "p131"
+ },
+ {
+  "fen": "8/8/8/6r1/7k/8/6pK/8 b - - 0 1",
+  "solution": [
+   "g2g1q"
+  ],
+  "themes": [
+   "mateIn1",
+   "promotion"
+  ],
+  "rating": 1017,
+  "title": "Promotion mate",
+  "id": "p132"
+ },
+ {
+  "fen": "6r1/8/8/8/7k/8/4P1pK/8 b - - 0 1",
+  "solution": [
+   "g2g1q"
+  ],
+  "themes": [
+   "mateIn1",
+   "promotion"
+  ],
+  "rating": 911,
+  "title": "Promotion mate",
+  "id": "p133"
+ },
+ {
+  "fen": "6r1/2k5/8/7K/8/8/8/r7 b - - 0 1",
+  "solution": [
+   "a1h1"
+  ],
+  "themes": [
+   "mateIn1",
+   "ladder"
+  ],
+  "rating": 821,
+  "title": "Ladder mate",
+  "id": "p134"
+ },
+ {
+  "fen": "6r1/2k5/8/8/7K/8/8/r7 b - - 0 1",
+  "solution": [
+   "a1h1"
+  ],
+  "themes": [
+   "mateIn1",
+   "ladder"
+  ],
+  "rating": 738,
+  "title": "Ladder mate",
+  "id": "p135"
+ },
+ {
+  "fen": "8/2k5/6r1/8/7K/8/8/r7 b - - 0 1",
+  "solution": [
+   "a1h1"
+  ],
+  "themes": [
+   "mateIn1",
+   "ladder"
+  ],
+  "rating": 756,
+  "title": "Ladder mate",
+  "id": "p136"
+ },
+ {
+  "fen": "8/2k5/8/8/7K/8/6r1/r7 b - - 0 1",
+  "solution": [
+   "a1h1"
+  ],
+  "themes": [
+   "mateIn1",
+   "ladder"
+  ],
+  "rating": 747,
+  "title": "Ladder mate",
+  "id": "p137"
+ },
+ {
+  "fen": "6r1/2k5/8/8/8/7K/8/r7 b - - 0 1",
+  "solution": [
+   "a1h1"
+  ],
+  "themes": [
+   "mateIn1",
+   "ladder"
+  ],
+  "rating": 834,
+  "title": "Ladder mate",
+  "id": "p138"
+ },
+ {
+  "fen": "8/2k5/6r1/8/8/7K/8/r7 b - - 0 1",
+  "solution": [
+   "a1h1"
+  ],
+  "themes": [
+   "mateIn1",
+   "ladder"
+  ],
+  "rating": 626,
+  "title": "Ladder mate",
+  "id": "p139"
+ },
+ {
+  "fen": "7K/8/5r1k/8/8/8/8/8 b - - 0 1",
+  "solution": [
+   "f6f8"
+  ],
+  "themes": [
+   "mateIn1",
+   "krEndgame"
+  ],
+  "rating": 804,
+  "title": "Rook and king mate",
+  "id": "p140"
+ },
+ {
+  "fen": "7K/8/7k/5r2/8/8/8/8 b - - 0 1",
+  "solution": [
+   "f5f8"
+  ],
+  "themes": [
+   "mateIn1",
+   "krEndgame"
+  ],
+  "rating": 861,
+  "title": "Rook and king mate",
+  "id": "p141"
+ },
+ {
+  "fen": "7K/8/7k/8/8/5r2/8/8 b - - 0 1",
+  "solution": [
+   "f3f8"
+  ],
+  "themes": [
+   "mateIn1",
+   "krEndgame"
+  ],
+  "rating": 804,
+  "title": "Rook and king mate",
+  "id": "p142"
+ },
+ {
+  "fen": "7K/8/7k/8/4r3/8/8/8 b - - 0 1",
+  "solution": [
+   "e4e8"
+  ],
+  "themes": [
+   "mateIn1",
+   "krEndgame"
+  ],
+  "rating": 787,
+  "title": "Rook and king mate",
+  "id": "p143"
+ },
+ {
+  "fen": "7K/8/7k/8/8/4r3/8/8 b - - 0 1",
+  "solution": [
+   "e3e8"
+  ],
+  "themes": [
+   "mateIn1",
+   "krEndgame"
+  ],
+  "rating": 803,
+  "title": "Rook and king mate",
+  "id": "p144"
+ },
+ {
+  "fen": "7K/8/7k/8/8/8/4r3/8 b - - 0 1",
+  "solution": [
+   "e2e8"
+  ],
+  "themes": [
+   "mateIn1",
+   "krEndgame"
+  ],
+  "rating": 812,
+  "title": "Rook and king mate",
+  "id": "p145"
+ },
+ {
+  "fen": "7K/8/7k/8/8/8/8/4r3 b - - 0 1",
+  "solution": [
+   "e1e8"
+  ],
+  "themes": [
+   "mateIn1",
+   "krEndgame"
+  ],
+  "rating": 790,
+  "title": "Rook and king mate",
+  "id": "p146"
+ },
+ {
+  "fen": "7K/8/7k/8/8/7q/8/8 b - - 0 1",
+  "solution": [
+   "h3c8"
+  ],
+  "themes": [
+   "mateIn1",
+   "kqEndgame"
+  ],
+  "rating": 684,
+  "title": "Queen and king mate",
+  "id": "p147"
+ },
+ {
+  "fen": "7K/8/6qk/8/8/8/8/8 b - - 0 1",
+  "solution": [
+   "g6e8"
+  ],
+  "themes": [
+   "mateIn1",
+   "kqEndgame"
+  ],
+  "rating": 662,
+  "title": "Queen and king mate",
+  "id": "p148"
+ },
+ {
+  "fen": "7K/8/7k/5q2/8/8/8/8 b - - 0 1",
+  "solution": [
+   "f5c8"
+  ],
+  "themes": [
+   "mateIn1",
+   "kqEndgame"
+  ],
+  "rating": 642,
+  "title": "Queen and king mate",
+  "id": "p149"
+ }
+]
