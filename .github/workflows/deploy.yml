@@ -17,6 +17,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
       # netlify deploy runs the build command from netlify.toml and injects
       # the site's environment variables (VITE_SUPABASE_*) into it.
       - run: npx --yes netlify-cli@27 deploy --prod
