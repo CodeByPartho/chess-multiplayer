@@ -58,7 +58,7 @@ export function PlayerStrip({
         </div>
         {subtitle && <div className="game-vs">{subtitle}</div>}
         {connection && connection.state !== 'ok' && (
-          <div className="game-vs" style={{ color: connection.state === 'lost' ? 'var(--danger-2)' : 'var(--warn)' }}>
+          <div className="ps-conn" style={{ color: connection.state === 'lost' ? 'var(--danger-2)' : 'var(--warn)' }}>
             {connection.text ?? (connection.state === 'grace' ? 'reconnecting…' : 'disconnected')}
           </div>
         )}

@@ -206,62 +206,73 @@ function PassPlayGame({
     <div className="game-layout">
       <div className="game-main">
         {stripFor(topColor, true)}
-        <Board
-          fen={s.displayFen}
-          orientation={bottomColor}
-          movable={s.movable}
-          onMove={(uci) => s.tryUserMove(uci)}
-          legalTargets={s.legalTargets}
-          lastMove={s.displayLastMove}
-          checkSquare={s.checkSquare}
-          pieceSet={settings.pieceSet}
-          coords={settings.coords}
-          autoQueen={settings.autoQueen}
-          ariaLabel={`Chess board, ${nameOf(bottomColor)} at the bottom`}
-        />
-        {stripFor(bottomColor, false)}
-
-        <div className="game-controls">
-          <button className="btn btn-sm" onClick={onFlip} title="Flip board (F)">
-            ⇅ Flip
-          </button>
-          {!s.over ? (
-            <>
-              <button className="btn btn-sm" onClick={() => setConfirmDraw(true)}>
-                Draw
-              </button>
-              <button className="btn btn-sm btn-danger" onClick={() => setConfirmResign(true)}>
-                Resign
-              </button>
-            </>
-          ) : (
-            <>
-              <button className="btn btn-sm" onClick={() => setShowPgn(true)}>
-                PGN
-              </button>
-              <button className="btn btn-sm btn-primary" onClick={onRematch}>
-                Rematch
-              </button>
-            </>
-          )}
-          <button className="btn btn-sm btn-ghost" onClick={onNewGame}>
-            New game
-          </button>
+        <div className="board-slot">
+          <Board
+            fen={s.displayFen}
+            orientation={bottomColor}
+            movable={s.movable}
+            onMove={(uci) => s.tryUserMove(uci)}
+            legalTargets={s.legalTargets}
+            lastMove={s.displayLastMove}
+            checkSquare={s.checkSquare}
+            pieceSet={settings.pieceSet}
+            coords={settings.coords}
+            autoQueen={settings.autoQueen}
+            ariaLabel={`Chess board, ${nameOf(bottomColor)} at the bottom`}
+          />
         </div>
+        {stripFor(bottomColor, false)}
       </div>
 
-      <div className="game-side">
+      <div className="game-side" data-tab="moves">
         {s.over && s.result && (
           <div className="result-banner">
             <div className="rb-title">{resultTitle(s.result, setup.whiteName, setup.blackName)}</div>
             <div className="rb-sub">{resultSubtitle(s.result, null)}</div>
           </div>
         )}
-        <MoveList sans={s.sans} currentPly={s.displayPly} onSeek={(p) => s.seek(p)} />
-        <div className="card" style={{ padding: 12 }}>
-          <div className="hint">
-            Navigate moves with <span className="kbd">←</span> <span className="kbd">→</span>, <span className="kbd">Home</span> /{' '}
-            <span className="kbd">End</span>. Right-drag on the board to draw arrows.
+
+        <div className="pane" data-pane="moves">
+          <div className="side-head">
+            <b>Pass &amp; Play</b>
+            <span>{setup.tc?.label ?? 'untimed'}</span>
+          </div>
+
+          <MoveList sans={s.sans} currentPly={s.displayPly} onSeek={(p) => s.seek(p)} />
+
+          <div className="game-controls">
+            <button className="btn btn-sm" onClick={onFlip} title="Flip board (F)">
+              ⇅ Flip
+            </button>
+            {!s.over ? (
+              <>
+                <button className="btn btn-sm" onClick={() => setConfirmDraw(true)}>
+                  Draw
+                </button>
+                <button className="btn btn-sm btn-danger" onClick={() => setConfirmResign(true)}>
+                  Resign
+                </button>
+              </>
+            ) : (
+              <>
+                <button className="btn btn-sm" onClick={() => setShowPgn(true)}>
+                  PGN
+                </button>
+                <button className="btn btn-sm btn-primary" onClick={onRematch}>
+                  Rematch
+                </button>
+              </>
+            )}
+            <button className="btn btn-sm btn-ghost" onClick={onNewGame}>
+              New game
+            </button>
+          </div>
+
+          <div className="card" style={{ padding: 12 }}>
+            <div className="hint">
+              Navigate moves with <span className="kbd">←</span> <span className="kbd">→</span>, <span className="kbd">Home</span> /{' '}
+              <span className="kbd">End</span>. Right-drag on the board to draw arrows.
+            </div>
           </div>
         </div>
       </div>

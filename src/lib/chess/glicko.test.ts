@@ -44,4 +44,48 @@ describe('glicko-2', () => {
     expect(expectedScore(p, { rating: 1500, rd: 50 })).toBeCloseTo(0.5, 2)
     expect(expectedScore(p, { rating: 1300, rd: 50 })).toBeGreaterThan(0.7)
   })
+
+  // Regression: without the spec's tau volatility constraint the Newton step is
+  // unconstrained, so a few extreme results drove vol into the tens, rd past the
+  // 350 ceiling, and the rating off a cliff (observed: vol 45.9, rd 681, -79).
+  it('keeps volatility and rd bounded across a punishing sequence', () => {
+    let p: GlickoPlayer = { rating: 1500, rd: 350, vol: 0.06, updatedAt: 0 }
+    // repeated upset wins, then a long layoff that inflates rd
+    const schedule = [
+      ...Array.from({ length: 5 }, () => ({ oppRating: 2600, oppRd: 60, score: 1 })),
+      { oppRating: 2600, oppRd: 60, score: 0 },
+      { oppRating: 2600, oppRd: 60, score: 0 },
+    ]
+    for (const s of schedule) {
+      p = updateGlicko(p, [{ ...s, elapsedMs: DAY }])
+      expect(p.rd).toBeLessThanOrEqual(350)
+      expect(p.vol).toBeGreaterThanOrEqual(0.01)
+      expect(p.vol).toBeLessThanOrEqual(0.5)
+      expect(p.rating).toBeGreaterThan(800)
+      expect(p.rating).toBeLessThan(2900)
+    }
+    // after a two-year layoff rd inflates but still respects the 350 ceiling
+    const rested = updateGlicko(p, [{ oppRating: p.rating, oppRd: 100, score: 0.5, elapsedMs: 730 * DAY }])
+    expect(rested.rd).toBeLessThanOrEqual(350)
+    expect(rested.vol).toBeLessThanOrEqual(0.5)
+  })
+
+  it('two evenly matched players converge toward parity', () => {
+    let a: GlickoPlayer = { rating: 1500, rd: 350, vol: 0.06, updatedAt: 0 }
+    let b: GlickoPlayer = { rating: 1500, rd: 350, vol: 0.06, updatedAt: 0 }
+    const gaps: number[] = []
+    for (let i = 0; i < 8; i++) {
+      const aWins = i % 2 === 0
+      a = updateGlicko(a, [{ oppRating: b.rating, oppRd: b.rd, score: aWins ? 1 : 0, elapsedMs: DAY }])
+      b = updateGlicko(b, [{ oppRating: a.rating, oppRd: a.rd, score: aWins ? 0 : 1, elapsedMs: DAY }])
+      gaps.push(Math.abs(a.rating - b.rating))
+      expect(a.rd).toBeLessThanOrEqual(350)
+      expect(b.rd).toBeLessThanOrEqual(350)
+    }
+    // fresh 350-RD provisionals legitimately swing ~±160/game, so the first
+    // result can open a wide gap; the system's job is to close it as RD tightens.
+    expect(Math.max(...gaps)).toBeLessThan(300)
+    expect(gaps[gaps.length - 1]).toBeLessThanOrEqual(gaps[0])
+    expect(gaps[gaps.length - 1]).toBeLessThan(100)
+  })
 })

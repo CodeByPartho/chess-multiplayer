@@ -214,7 +214,7 @@ function Editor({ initialFen, onAnalyze, loadedGame }: { initialFen: string; onA
   }
 
   return (
-    <div style={{ maxWidth: 860, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 12 }}>
+    <div className="editor-view" style={{ maxWidth: 860, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 12 }}>
       <div className="card" style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
         <h2 style={{ margin: 0, fontSize: 19 }}>Board editor</h2>
         <span className="hint">{loadedGame ? 'Adjust the start position of your game' : 'Set up any position, then analyze it'}</span>
@@ -442,6 +442,7 @@ function AnalyzeView({
   )
   const [showPgn, setShowPgn] = useState(false)
   const [flipped, setFlipped] = useState(false)
+  const [sideTab, setSideTab] = useState<'moves' | 'analysis'>('moves')
 
   const cancelRef = useRef<{ value: boolean }>({ value: false })
   const liveJob = useRef(0)
@@ -633,7 +634,7 @@ function AnalyzeView({
           captured={caps.byBlack}
           active={false}
         />
-        <div className="board-with-bar">
+        <div className="board-slot">
           <EvalBar score={barScore} orientation={bottomColor} />
           <Board
             fen={s.displayFen}
@@ -667,36 +668,9 @@ function AnalyzeView({
           captured={caps.byWhite}
           active={false}
         />
-
-        <div className="game-controls">
-          <button className="btn btn-sm" onClick={() => setFlipped((f) => !f)} title="Flip board">
-            ⇅ Flip
-          </button>
-          <button className="btn btn-sm" onClick={() => s.takeback(2)} disabled={s.plies.length === 0 || review.running}>
-            ↩ Takeback
-          </button>
-          <button
-            className="btn btn-sm btn-primary"
-            onClick={() => void startReview(s.plies.map((p) => p.uci))}
-            disabled={!engine || review.running}
-          >
-            {result ? 'Re-review' : '⚡ Full review'}
-          </button>
-          <button className="btn btn-sm" onClick={() => setShowPgn(true)}>
-            PGN
-          </button>
-          <button className="btn btn-sm" onClick={() => onOpenEditor(s.displayFen)}>
-            🧽 Editor
-          </button>
-        </div>
-        {engineError && (
-          <p className="error-text" style={{ textAlign: 'center' }}>
-            Engine failed to load: {engineError}. Moves and browsing still work.
-          </p>
-        )}
       </div>
 
-      <div className="game-side">
+      <div className="game-side" data-tab={sideTab}>
         {result && (
           <div className="result-banner">
             <div className="rb-title">Game review{recordLabel ? ` — ${recordLabel}` : ''}</div>
@@ -724,115 +698,161 @@ function AnalyzeView({
           </div>
         )}
 
-        {review.running && (
-          <div className="card" style={{ padding: 12 }}>
-            <div className="progress">
-              <div style={{ width: `${Math.round((review.done / Math.max(1, review.total)) * 100)}%` }} />
-            </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 6 }}>
-              <span className="hint">
-                {review.phase === 'eval' ? 'Engine evaluation' : 'Classifying moves'} — {review.done}/{review.total}
-              </span>
-              <button
-                className="btn btn-sm btn-ghost"
-                onClick={() => {
-                  cancelRef.current.value = true
-                }}
-              >
-                Cancel
-              </button>
-            </div>
+        <div className="pane" data-pane="moves">
+          <div className="side-head">
+            <b>Analysis</b>
+            <span>{recordLabel ?? 'free exploration'}</span>
           </div>
-        )}
 
-        {result && <EvalGraph evals={result.evals} currentPly={s.displayPly} onSeek={(p) => s.seek(p)} />}
+          <MoveList
+            sans={sans}
+            classes={classMap}
+            currentPly={s.displayPly}
+            onSeek={(p) => s.seek(p)}
+          />
 
-        {opening && (
-          <div className="card" style={{ padding: 12 }}>
-            <div className="opening-chip" style={{ marginBottom: 6 }}>
-              <span className="eco">{opening.eco}</span>
-              <b style={{ color: 'var(--text)' }}>{opening.name}</b>
-            </div>
-            {book && book.rest.length > 0 && (
-              <div>
-                <div className="hint" style={{ marginBottom: 4 }}>
-                  Book line:
-                </div>
-                <div className="book-line">
-                  {book.rest.slice(0, 12).map((san, i) => (
-                    <button key={i} className="book-move" onClick={() => playSan(san)}>
-                      {san}
-                    </button>
-                  ))}
-                </div>
+          <div className="game-controls">
+            <button className="btn btn-sm" onClick={() => setFlipped((f) => !f)} title="Flip board">
+              ⇅ Flip
+            </button>
+            <button className="btn btn-sm" onClick={() => s.takeback(2)} disabled={s.plies.length === 0 || review.running}>
+              ↩ Takeback
+            </button>
+            <button
+              className="btn btn-sm btn-primary"
+              onClick={() => void startReview(s.plies.map((p) => p.uci))}
+              disabled={!engine || review.running}
+            >
+              {result ? 'Re-review' : '⚡ Full review'}
+            </button>
+            <button className="btn btn-sm" onClick={() => setShowPgn(true)}>
+              PGN
+            </button>
+            <button className="btn btn-sm" onClick={() => onOpenEditor(s.displayFen)}>
+              🧽 Editor
+            </button>
+          </div>
+
+          {engineError && (
+            <p className="error-text" style={{ textAlign: 'center', margin: 0 }}>
+              Engine failed to load: {engineError}. Moves and browsing still work.
+            </p>
+          )}
+
+          {recordId && (
+            <Link to="/" className="btn btn-ghost btn-sm" style={{ alignSelf: 'center' }}>
+              ← Back home
+            </Link>
+          )}
+          {!recordId && (
+            <button className="btn btn-ghost btn-sm" style={{ alignSelf: 'center' }} onClick={() => navigate('/')}>
+              ← Back home
+            </button>
+          )}
+        </div>
+
+        <div className="pane" data-pane="analysis">
+          {review.running && (
+            <div className="card" style={{ padding: 12 }}>
+              <div className="progress">
+                <div style={{ width: `${Math.round((review.done / Math.max(1, review.total)) * 100)}%` }} />
               </div>
-            )}
-          </div>
-        )}
-
-        {alternatives.length > 0 && (
-          <div className="card" style={{ padding: 12 }}>
-            <div className="hint" style={{ marginBottom: 6 }}>
-              Opening explorer — other continuations from here:
-            </div>
-            <div className="book-line">
-              {alternatives.map((a, i) => (
-                <button key={i} className="book-move" onClick={() => playSan(a.san)} title={'count' in a ? `${a.count} ECO lines` : undefined}>
-                  {a.san}
-                  {'count' in a ? ` (${a.count})` : ''}
-                  {'eco' in a && a.eco ? ` · ${a.eco}` : ''}
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {live && live.lines.length > 0 && (
-          <div className="card" style={{ padding: 10 }}>
-            <div className="hint" style={{ marginBottom: 6 }}>
-              Engine lines {review.running ? '(paused)' : ''}
-            </div>
-            <div className="pv-lines">
-              {live.lines.map((l) => (
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 6 }}>
+                <span className="hint">
+                  {review.phase === 'eval' ? 'Engine evaluation' : 'Classifying moves'} — {review.done}/{review.total}
+                </span>
                 <button
-                  key={l.multipv}
-                  className="pv-line"
-                  onClick={() => l.pv[0] && s.tryUserMove(l.pv[0])}
-                  title="Play this move"
+                  className="btn btn-sm btn-ghost"
+                  onClick={() => {
+                    cancelRef.current.value = true
+                  }}
                 >
-                  <span className="pv-score">{formatEval(l.score)}</span>
-                  <span className="pv-depth">d{l.depth}</span>
-                  <span className="pv-moves">{pvToSan(s.displayFen, l.pv, 6)}</span>
+                  Cancel
                 </button>
-              ))}
+              </div>
             </div>
-          </div>
-        )}
+          )}
 
-        <MoveList
-          sans={sans}
-          classes={classMap}
-          currentPly={s.displayPly}
-          onSeek={(p) => s.seek(p)}
-        />
+          {result && <EvalGraph evals={result.evals} currentPly={s.displayPly} onSeek={(p) => s.seek(p)} />}
 
-        <div className="card" style={{ padding: 12 }}>
-          <div className="hint">
-            Arrow keys browse moves. Click an engine line to play it. Right-drag draws arrows, right-click marks squares. Make
-            moves freely to explore variations.
+          {opening && (
+            <div className="card" style={{ padding: 12 }}>
+              <div className="opening-chip" style={{ marginBottom: 6 }}>
+                <span className="eco">{opening.eco}</span>
+                <b style={{ color: 'var(--text)' }}>{opening.name}</b>
+              </div>
+              {book && book.rest.length > 0 && (
+                <div>
+                  <div className="hint" style={{ marginBottom: 4 }}>
+                    Book line:
+                  </div>
+                  <div className="book-line">
+                    {book.rest.slice(0, 12).map((san, i) => (
+                      <button key={i} className="book-move" onClick={() => playSan(san)}>
+                        {san}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {alternatives.length > 0 && (
+            <div className="card" style={{ padding: 12 }}>
+              <div className="hint" style={{ marginBottom: 6 }}>
+                Opening explorer — other continuations from here:
+              </div>
+              <div className="book-line">
+                {alternatives.map((a, i) => (
+                  <button key={i} className="book-move" onClick={() => playSan(a.san)} title={'count' in a ? `${a.count} ECO lines` : undefined}>
+                    {a.san}
+                    {'count' in a ? ` (${a.count})` : ''}
+                    {'eco' in a && a.eco ? ` · ${a.eco}` : ''}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {live && live.lines.length > 0 && (
+            <div className="card" style={{ padding: 10 }}>
+              <div className="hint" style={{ marginBottom: 6 }}>
+                Engine lines {review.running ? '(paused)' : ''}
+              </div>
+              <div className="pv-lines">
+                {live.lines.map((l) => (
+                  <button
+                    key={l.multipv}
+                    className="pv-line"
+                    onClick={() => l.pv[0] && s.tryUserMove(l.pv[0])}
+                    title="Play this move"
+                  >
+                    <span className="pv-score">{formatEval(l.score)}</span>
+                    <span className="pv-depth">d{l.depth}</span>
+                    <span className="pv-moves">{pvToSan(s.displayFen, l.pv, 6)}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          <div className="card" style={{ padding: 12 }}>
+            <div className="hint">
+              Arrow keys browse moves. Click an engine line to play it. Right-drag draws arrows, right-click marks squares. Make
+              moves freely to explore variations.
+            </div>
           </div>
         </div>
 
-        {recordId && (
-          <Link to="/" className="btn btn-ghost btn-sm" style={{ alignSelf: 'center' }}>
-            ← Back home
-          </Link>
-        )}
-        {!recordId && (
-          <button className="btn btn-ghost btn-sm" style={{ alignSelf: 'center' }} onClick={() => navigate('/')}>
-            ← Back home
+        <nav className="side-tabs" aria-label="Analysis panel">
+          <button className={sideTab === 'moves' ? 'active' : ''} onClick={() => setSideTab('moves')}>
+            Moves
           </button>
-        )}
+          <button className={sideTab === 'analysis' ? 'active' : ''} onClick={() => setSideTab('analysis')}>
+            Analysis
+          </button>
+        </nav>
       </div>
 
       {showPgn && (

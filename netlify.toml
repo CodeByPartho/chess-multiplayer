@@ -2,6 +2,13 @@
   command = "npm run build"
   publish = "dist"
 
+# SPA fallback: /join/<id> and /invite/<code> are client routes — the
+# dev server (vite) does this automatically, Netlify needs it explicitly.
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
 # Needed only if you switch to a multi-threaded Stockfish build (SharedArrayBuffer):
 # [[headers]]
 #   for = "/*"

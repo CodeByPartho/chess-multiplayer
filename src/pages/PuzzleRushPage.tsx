@@ -158,19 +158,26 @@ export default function PuzzleRushPage() {
             className={wrongFlash ? 'shake' : ''}
           />
         )}
-
-        {showSolution && puzzle && (
-          <p className="hint" style={{ textAlign: 'center' }}>
-            The mate was <span className="mono">{puzzle.solution[0]}</span> — next puzzle coming up…
-          </p>
-        )}
       </div>
 
-      <div className="game-side">
-        <div className="card" style={{ padding: 12 }}>
-          <div className="hint">
-            Every second counts. Play the mating move; wrong answers auto-advance after showing the solution. Rush puzzles
-            don&apos;t change your puzzle rating.
+      <div className="game-side" data-tab="moves">
+        <div className="pane" data-pane="moves">
+          <div className="side-head">
+            <b>Puzzle Rush</b>
+            <span>solved {score}</span>
+          </div>
+
+          {showSolution && puzzle && (
+            <p className="hint" style={{ textAlign: 'center', margin: 0 }}>
+              The mate was <span className="mono">{puzzle.solution[0]}</span> — next puzzle coming up…
+            </p>
+          )}
+
+          <div className="card" style={{ padding: 12 }}>
+            <div className="hint">
+              Every second counts. Play the mating move; wrong answers auto-advance after showing the solution. Rush puzzles
+              don&apos;t change your puzzle rating.
+            </div>
           </div>
         </div>
       </div>

@@ -56,8 +56,14 @@ export function useGameSession(opts: UseGameSessionOpts) {
     }
     coreRef.current = g
   }
-  const core = coreRef.current
   const [, force] = useReducer((n: number) => n + 1, 0)
+  const core = coreRef.current!
+
+  /** swap the underlying core wholesale (online sync rebuilds from server) */
+  const replaceCore = useCallback((g: GameCore) => {
+    coreRef.current = g
+    force()
+  }, [])
   const [viewPly, setViewPly] = useState<number | null>(null)
   const [premove, setPremove] = useState<BoardMove | null>(null)
   const resultFired = useRef(false)
@@ -201,6 +207,7 @@ export function useGameSession(opts: UseGameSessionOpts) {
 
   return {
     core,
+    replaceCore,
     over,
     turn,
     result: core.result,
