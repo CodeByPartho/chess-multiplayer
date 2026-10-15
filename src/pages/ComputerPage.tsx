@@ -310,7 +310,7 @@ function ComputerGame({
     <div className="game-layout">
       <div className="game-main">
         {stripFor(topColor, true)}
-        <div className="board-with-bar">
+        <div className="board-slot">
           {settings.showEval && <EvalBar score={evalScore} orientation={bottomColor} />}
           <Board
             fen={s.displayFen}
@@ -330,42 +330,9 @@ function ComputerGame({
           />
         </div>
         {stripFor(bottomColor, false)}
-
-        <div className="game-controls">
-          {!over ? (
-            <>
-              <button className="btn btn-sm" onClick={requestHint} disabled={!engine || turn !== setup.userColor}>
-                💡 Hint
-              </button>
-              <button className="btn btn-sm" onClick={doTakeback} disabled={s.plies.length === 0}>
-                ↩ Takeback
-              </button>
-              <button className="btn btn-sm btn-danger" onClick={() => setConfirmResign(true)}>
-                Resign
-              </button>
-            </>
-          ) : (
-            <>
-              <button className="btn btn-sm btn-primary" onClick={onRematch}>
-                Rematch
-              </button>
-              <Link to="/analysis" className="btn btn-sm">
-                Analysis board
-              </Link>
-            </>
-          )}
-          <button className="btn btn-sm btn-ghost" onClick={onBack}>
-            New opponent
-          </button>
-        </div>
-        {engineError && (
-          <p className="error-text" style={{ textAlign: 'center' }}>
-            Engine failed to load: {engineError}. You can still play — hints and the opponent need it.
-          </p>
-        )}
       </div>
 
-      <div className="game-side">
+      <div className="game-side" data-tab="moves">
         {s.result && (
           <div className="result-banner">
             <div className="rb-title">{resultTitle(s.result, identity.username, lvl.name)}</div>
@@ -377,11 +344,56 @@ function ComputerGame({
             )}
           </div>
         )}
-        <MoveList sans={s.sans} currentPly={s.displayPly} onSeek={(p) => s.seek(p)} />
-        <div className="card" style={{ padding: 12 }}>
-          <div style={{ fontSize: 13.5, color: 'var(--text-dim)' }}>
-            vs <b>{lvl.name}</b> ({lvl.blurb}) — premoves are {settings.premoves ? 'on' : 'off'}. Right-drag to draw arrows,
-            right-click a square to mark it.
+
+        <div className="pane" data-pane="moves">
+          <div className="side-head">
+            <b>vs {lvl.name}</b>
+            <span>
+              level {lvl.level} · {setup.tc?.label ?? 'untimed'}
+            </span>
+          </div>
+
+          <MoveList sans={s.sans} currentPly={s.displayPly} onSeek={(p) => s.seek(p)} />
+
+          <div className="game-controls">
+            {!over ? (
+              <>
+                <button className="btn btn-sm" onClick={requestHint} disabled={!engine || turn !== setup.userColor}>
+                  💡 Hint
+                </button>
+                <button className="btn btn-sm" onClick={doTakeback} disabled={s.plies.length === 0}>
+                  ↩ Takeback
+                </button>
+                <button className="btn btn-sm btn-danger" onClick={() => setConfirmResign(true)}>
+                  Resign
+                </button>
+              </>
+            ) : (
+              <>
+                <button className="btn btn-sm btn-primary" onClick={onRematch}>
+                  Rematch
+                </button>
+                <Link to="/analysis" className="btn btn-sm">
+                  Analysis
+                </Link>
+              </>
+            )}
+            <button className="btn btn-sm btn-ghost" onClick={onBack}>
+              New opponent
+            </button>
+          </div>
+
+          {engineError && (
+            <p className="error-text" style={{ textAlign: 'center', margin: 0 }}>
+              Engine failed to load: {engineError}. You can still play — hints and the opponent need it.
+            </p>
+          )}
+
+          <div className="card" style={{ padding: 12 }}>
+            <div style={{ fontSize: 13.5, color: 'var(--text-dim)' }}>
+              vs <b>{lvl.name}</b> ({lvl.blurb}) — premoves are {settings.premoves ? 'on' : 'off'}. Right-drag to draw arrows,
+              right-click a square to mark it.
+            </div>
           </div>
         </div>
       </div>

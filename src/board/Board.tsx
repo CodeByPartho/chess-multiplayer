@@ -171,6 +171,90 @@ export function Board({
 
   const editing = editorPiece !== undefined
 
+  /* ---- fit: snap the board down to a multiple of 8 whole pixels ----
+     One geometry source of truth: the fit writes --board-px on <html>,
+     which sizes the board, the player strips and every square (% based)
+     from the same value. Width comes from the layout minus the side
+     panel; height only applies when the slot has a definite height
+     (desktop app shell, flex-grow > 0). */
+  useEffect(() => {
+    const board = boardRef.current
+    const parent = board?.parentElement
+    if (!board || !parent) return
+
+    const apply = () => {
+      const ps = getComputedStyle(parent)
+      const padX = (parseFloat(ps.paddingLeft) || 0) + (parseFloat(ps.paddingRight) || 0)
+      const padY = (parseFloat(ps.paddingTop) || 0) + (parseFloat(ps.paddingBottom) || 0)
+      const isRow = ps.flexDirection === 'row' || ps.flexDirection === 'row-reverse'
+      const isFlex = ps.display.includes('flex') || ps.display.includes('grid')
+
+      // 1. width budget for the slot
+      let slotW = parent.clientWidth - padX
+      const grow = parseFloat(ps.flexGrow) || 0
+      if (grow > 0) {
+        const layout = parent.closest('.game-layout') as HTMLElement | null
+        if (layout) {
+          const ls = getComputedStyle(layout)
+          const tracks = ls.gridTemplateColumns.trim().split(/\s+/).filter(Boolean)
+          if (ls.display.includes('grid') && tracks.length === 2) {
+            const side = layout.querySelector(':scope > .game-side') as HTMLElement | null
+            if (side) {
+              const gapX = parseFloat(ls.columnGap) || 0
+              slotW = layout.clientWidth - gapX - side.getBoundingClientRect().width
+            }
+          }
+        }
+      }
+
+      // 2. siblings sharing the row (the evaluation bar) + flex gaps
+      let availW = slotW
+      if (isFlex && isRow) {
+        const kids = Array.from(parent.children)
+        const gap = (parseFloat(ps.gap) || 0) * Math.max(0, kids.length - 1)
+        let siblingW = gap
+        for (const child of kids) {
+          if (child === board) continue
+          const cs = getComputedStyle(child)
+          if (cs.display === 'none') continue
+          const r = child.getBoundingClientRect()
+          siblingW += r.width + (parseFloat(cs.marginLeft) || 0) + (parseFloat(cs.marginRight) || 0)
+        }
+        availW -= siblingW
+      }
+
+      // 3. height budget (only when the slot is a definite flex: 1 box)
+      const availH = grow > 0 ? parent.clientHeight - padY : Number.POSITIVE_INFINITY
+
+      const size = Math.max(160, Math.floor(Math.min(availW, availH) / 8) * 8)
+      const root = document.documentElement
+      if (root.style.getPropertyValue('--board-px') !== `${size}px`) {
+        root.style.setProperty('--board-px', `${size}px`)
+        root.style.setProperty('--board-size', `${size}px`)
+      }
+    }
+
+    let raf = 0
+    const schedule = () => {
+      cancelAnimationFrame(raf)
+      raf = requestAnimationFrame(() => {
+        if (boardRef.current && boardRef.current.parentElement) apply()
+      })
+    }
+    schedule()
+
+    const ro = new ResizeObserver(schedule)
+    ro.observe(parent)
+    const layout = parent.closest('.game-layout')
+    if (layout && layout !== parent) ro.observe(layout)
+    window.addEventListener('resize', schedule)
+    return () => {
+      ro.disconnect()
+      window.removeEventListener('resize', schedule)
+      cancelAnimationFrame(raf)
+    }
+  }, [orientation])
+
   /* ---- keep piece instances in sync with fen ---- */
   useEffect(() => {
     if (appliedFen.current === fen) return
@@ -519,7 +603,12 @@ export function Board({
       {/* squares */}
       <div className="layer">
         {squares.map((s) => (
-          <div key={s.sq} className={`sq ${s.light ? 'light' : 'dark'}`} style={{ left: `${s.x * 12.5}%`, top: `${s.y * 12.5}%` }} />
+          <div
+            key={s.sq}
+            data-square={s.sq}
+            className={`sq ${s.light ? 'light' : 'dark'}`}
+            style={{ left: `${s.x * 12.5}%`, top: `${s.y * 12.5}%` }}
+          />
         ))}
       </div>
 

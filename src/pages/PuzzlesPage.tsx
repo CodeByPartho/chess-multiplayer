@@ -259,36 +259,9 @@ function PuzzleSolve({
           onWrong={() => setWrongCount((w) => w + 1)}
           showSolution={showSolution}
         />
-
-        <div className="game-controls">
-          {!solved && !showSolution && (
-            <button className="btn btn-sm" onClick={giveUp}>
-              Show solution
-            </button>
-          )}
-          {!solved && wrongCount > 0 && <span className="hint">Not the move — try again! ({wrongCount} wrong)</span>}
-          {showSolution && !solved && (
-            <span className="hint">
-              Answer: <span className="mono">{solutionSan(puzzle)}</span> — press retry for a fresh board.
-            </span>
-          )}
-          {solved && onNext && (
-            <button className="btn btn-primary" onClick={onNext}>
-              Next puzzle →
-            </button>
-          )}
-          {solved && !onNext && (
-            <button className="btn btn-primary" onClick={onExit}>
-              Back to puzzles
-            </button>
-          )}
-          <button className="btn btn-sm btn-ghost" onClick={retry}>
-            ↻ Restart
-          </button>
-        </div>
       </div>
 
-      <div className="game-side">
+      <div className="game-side" data-tab="moves">
         {solved && (
           <div className="result-banner">
             <div className="rb-title">✅ Solved in {solvedSec.toFixed(1)}s</div>
@@ -298,23 +271,61 @@ function PuzzleSolve({
             </div>
           </div>
         )}
-        {isDaily && (
+
+        <div className="pane" data-pane="moves">
+          <div className="side-head">
+            <b>{modeLabel}</b>
+            <span>~{puzzle.rating}</span>
+          </div>
+
+          <div className="game-controls">
+            {!solved && !showSolution && (
+              <button className="btn btn-sm" onClick={giveUp}>
+                Show solution
+              </button>
+            )}
+            {showSolution && !solved && (
+              <span className="hint">
+                Answer: <span className="mono">{solutionSan(puzzle)}</span> — press retry for a fresh board.
+              </span>
+            )}
+            {solved && onNext && (
+              <button className="btn btn-primary" onClick={onNext}>
+                Next puzzle →
+              </button>
+            )}
+            {solved && !onNext && (
+              <button className="btn btn-primary" onClick={onExit}>
+                Back to puzzles
+              </button>
+            )}
+            <button className="btn btn-sm btn-ghost" onClick={retry}>
+              ↻ Restart
+            </button>
+          </div>
+
+          {!solved && wrongCount > 0 && (
+            <div className="hint">Not the move — try again! ({wrongCount} wrong)</div>
+          )}
+
+          {isDaily && (
+            <div className="card" style={{ padding: 12 }}>
+              <div className="hint">
+                This is the daily puzzle — everyone gets the same one today.{' '}
+                <button
+                  className="btn btn-sm btn-ghost"
+                  onClick={() => void copyText(`${location.origin}/puzzle/${puzzle.id}`).then((ok) => ok && toast.show('Link copied'))}
+                >
+                  Copy share link
+                </button>
+              </div>
+            </div>
+          )}
           <div className="card" style={{ padding: 12 }}>
             <div className="hint">
-              This is the daily puzzle — everyone gets the same one today.{' '}
-              <button
-                className="btn btn-sm btn-ghost"
-                onClick={() => void copyText(`${location.origin}/puzzle/${puzzle.id}`).then((ok) => ok && toast.show('Link copied'))}
-              >
-                Copy share link
-              </button>
+              Find the best move — here, a forced checkmate. Legal-move dots work as usual; wrong tries don&apos;t change the
+              position.
             </div>
-          </div>
-        )}
-        <div className="card" style={{ padding: 12 }}>
-          <div className="hint">
-            Find the best move — here, a forced checkmate. Legal-move dots work as usual; wrong tries don&apos;t change the
-            position.
           </div>
         </div>
       </div>

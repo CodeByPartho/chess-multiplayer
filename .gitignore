@@ -3,6 +3,10 @@ dist/
 .env
 .env.local
 *.log
+
+# Playwright test output (screenshots/ is a kept deliverable)
+test-results/
+playwright-report/
 supabase/.temp/
 supabase/.branches/
 

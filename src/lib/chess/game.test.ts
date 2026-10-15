@@ -212,4 +212,22 @@ describe('replay', () => {
     expect(copy.plies.map((p) => p.san)).toEqual(g.plies.map((p) => p.san))
     expect(copy.clock!.wms).toBe(g.clock!.wms)
   })
+
+  it('replay of historical timestamps anchors the clock to the last ply', () => {
+    // plies stamped in the past: replay must NOT recompute elapsed from the
+    // wall clock (that clamps to 0 and leaves the mover's time at the base)
+    const g = new GameCore({ tc, now: NOW })
+    g.moveByUci('e2e4', NOW) // white uses 5s
+    g.moveByUci('e7e5', NOW) // black uses 2s
+    const plies = g.plies.map((p): Ply => ({ ...p }))
+    plies[0].wms = 55_000 // 60s base - 5s + 1s inc
+    plies[0].bms = 60_000
+    plies[1].wms = 55_000
+    plies[1].bms = 59_000 // 60s - 2s + 1s inc
+    const copy = GameCore.replay(g.startFen, plies, tc, NOW + 500_000)
+    expect(copy.clock!.wms).toBe(55_000)
+    expect(copy.clock!.bms).toBe(59_000)
+    expect(copy.clock!.turn).toBe('w')
+    expect(copy.clock!.lastMoveAt).toBe(plies[1].at)
+  })
 })

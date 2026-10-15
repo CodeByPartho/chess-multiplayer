@@ -115,7 +115,7 @@ export function PuzzleBoard({ puzzle, onSolved, onWrong, showSolution = false, c
     : []
 
   return (
-    <div className={`puzzle-board-wrap ${wrongFlash ? 'shake' : ''} ${className}`}>
+    <div className={`puzzle-board-wrap ${wrongFlash ? 'shake' : ''} ${className}`} data-puzzle-id={puzzle.id}>
       <Board
         fen={fenNow}
         orientation={mySide}

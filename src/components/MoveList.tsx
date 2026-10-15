@@ -32,11 +32,13 @@ export function MoveList({ sans, classes, currentPly, onSeek }: MoveListProps) {
     const el = boxRef.current
     if (!el) return
     const row = el.querySelector('.mv.current') as HTMLElement | null
-    if (row) {
-      const er = row.getBoundingClientRect()
-      const br = el.getBoundingClientRect()
-      if (er.top < br.top || er.bottom > br.bottom) row.scrollIntoView({ block: 'nearest' })
-    }
+    if (!row) return
+    // scroll ONLY this container — scrollIntoView would walk up through every
+    // ancestor (including the window) and make the whole page jump on a move
+    const er = row.getBoundingClientRect()
+    const br = el.getBoundingClientRect()
+    if (er.top < br.top) el.scrollTop += er.top - br.top - 4
+    else if (er.bottom > br.bottom) el.scrollTop += er.bottom - br.bottom + 4
   }, [currentPly, sans.length])
 
   const rows = Math.ceil(sans.length / 2)
@@ -55,7 +57,7 @@ export function MoveList({ sans, classes, currentPly, onSeek }: MoveListProps) {
           const wIdx = r * 2
           const bIdx = r * 2 + 1
           const renderMv = (idx: number) => {
-            if (idx >= sans.length) return <div style={{ flex: 1 }} />
+            if (idx >= sans.length) return <div />
             const cls = classes?.[idx]
             const badge = cls ? CLASS_BADGE[cls] : null
             return (

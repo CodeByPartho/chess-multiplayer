@@ -26,18 +26,22 @@ export interface GameClockProps {
 }
 
 export function GameClock({ getMs, running, lowMs = 15_000, untimed, label }: GameClockProps) {
-  const [ms, setMs] = useState(() => getMs())
+  // re-render on a fixed cadence; the value itself is read during render, so a
+  // parent update (fresh server row) shows immediately instead of waiting for
+  // the next tick, and ticking never depends on how often the parent renders
+  const [, setTick] = useState(0)
 
   useEffect(() => {
     if (untimed) return
-    const id = setInterval(() => setMs(getMs()), 90)
+    const id = setInterval(() => setTick((t) => t + 1), 90)
     return () => clearInterval(id)
-  }, [getMs, untimed])
+  }, [untimed])
 
   if (untimed) {
     return <div className="clock untimed">{label ?? 'No limit'}</div>
   }
 
+  const ms = getMs()
   const low = running && ms <= lowMs
   return (
     <div

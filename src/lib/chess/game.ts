@@ -228,6 +228,15 @@ export class GameCore {
       // overwrite with authoritative server values
       g.plies[g.plies.length - 1] = p
     }
+    if (tc) {
+      // moveByUci derives the clock from wall-clock elapsed, which is wrong
+      // when replaying historical timestamps (elapsed clamps to 0). Anchor
+      // the clock to the last ply's authoritative values instead.
+      const last = g.plies[g.plies.length - 1]
+      g.clock = last
+        ? { wms: last.wms, bms: last.bms, lastMoveAt: last.at, turn: g.turn }
+        : { ...initialClock(tc.base, now), turn: g.turn }
+    }
     return g
   }
 }

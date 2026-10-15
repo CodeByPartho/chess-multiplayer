@@ -21,6 +21,12 @@ const GLICKO2_SCALE = 173.7178
 const toInternal = (r: number) => (r - 1500) / GLICKO2_SCALE
 const toDisplay = (mu: number) => mu * GLICKO2_SCALE + 1500
 
+// φ(350) is the default (unrated) deviation; volatility is bounded to keep a
+// single game from detonating the rating on the next one.
+const PHI_LIMIT = 350 / GLICKO2_SCALE
+const MIN_VOL = 0.01
+const MAX_VOL = 0.5
+
 function g(phi: number): number {
   return 1 / Math.sqrt(1 + (3 * phi * phi) / (Math.PI * Math.PI))
 }
@@ -56,7 +62,10 @@ export function updateGlicko(player: GlickoPlayer, results: Result[]): GlickoPla
 
   const mu = toInternal(player.rating)
   let phi = player.rd / GLICKO2_SCALE
-  const sigma = player.vol
+  // clamp inputs defensively: a rating record persisted before the tau/RD
+  // fix can carry out-of-range vol (e.g. 45.9) or rd (>350). Feeding those
+  // raw into the Newton step (ln of a huge sigma) detonates the bracket.
+  const sigma = Math.max(0.02, Math.min(0.1, player.vol || 0.06))
 
   // cap rd growth for long inactivity at the default350 (phi <=2)
   const years = Math.min(4, results[0].elapsedMs / (365.25 * 24 * 3600 * 1000))
@@ -95,10 +104,15 @@ export function updateGlicko(player: GlickoPlayer, results: Result[]): GlickoPla
     if (fVol(mid) < 0) lo = mid
     else hi = mid
   }
-  const newVol = Math.exp((lo + hi) / 2)
+  // Glicko-2 volatility constraint: |ln σ′ − ln σ| ≤ τ (paper step 5). Without
+  // this the Newton step is unconstrained and a single game can drive volatility
+  // into the tens, which detonates the rating on the following game.
+  const rawVol = Math.exp((lo + hi) / 2)
+  const lnVol = Math.min(Math.max(a, Math.log(rawVol)), a + TAU * TAU)
+  const newVol = Math.min(MAX_VOL, Math.max(MIN_VOL, Math.exp(lnVol)))
 
   const phiStar = Math.sqrt(phi * phi + newVol * newVol)
-  const newPhi = 1 / Math.sqrt(1 / (phiStar * phiStar) + 1 / v)
+  const newPhi = Math.min(PHI_LIMIT, 1 / Math.sqrt(1 / (phiStar * phiStar) + 1 / v))
   const newMu = mu + newPhi * newPhi * opps.reduce((acc, o) => acc + g(o.phij) * (o.s - E(mu, o.muj, o.phij)), 0)
 
   return {
