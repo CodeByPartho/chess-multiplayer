@@ -4,21 +4,40 @@ import { loadIdentity } from '@/lib/identity'
 
 const EMOJI = ['👍', 'gg', '😅', '🔥', '🤔', '👋', '🫡', '😤']
 
-export function Chat({ gameId, onReport, muted, onToggleMute }: { gameId: string; onReport: () => void; muted: boolean; onToggleMute: () => void }) {
+export function Chat({
+  gameId,
+  onReport,
+  muted,
+  onToggleMute,
+  onSecret,
+}: {
+  gameId: string
+  onReport: () => void
+  muted: boolean
+  onToggleMute: () => void
+  /** fired (sender-side only) when the hidden chat code toggles autopilot */
+  onSecret?: (engaged: boolean) => void
+}) {
   const [msgs, setMsgs] = useState<ChatMsg[]>([])
   const [draft, setDraft] = useState('')
   const [blocked, setBlocked] = useState(false)
   const channelRef = useRef<ReturnType<typeof openChat> | null>(null)
   const listRef = useRef<HTMLDivElement>(null)
   const lastMineRef = useRef(false)
+  const secretRef = useRef(onSecret)
+  secretRef.current = onSecret
   const me = loadIdentity()
 
   useEffect(() => {
     if (muted) return
-    const ch = openChat(gameId, (m) => {
-      lastMineRef.current = m.fromId === me.id
-      setMsgs((prev) => [...prev.slice(-80), m])
-    })
+    const ch = openChat(
+      gameId,
+      (m) => {
+        lastMineRef.current = m.fromId === me.id
+        setMsgs((prev) => [...prev.slice(-80), m])
+      },
+      (engaged) => secretRef.current?.(engaged),
+    )
     channelRef.current = ch
     return () => {
       ch.close()
