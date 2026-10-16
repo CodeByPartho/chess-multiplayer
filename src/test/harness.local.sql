@@ -59,3 +59,65 @@ language sql stable
 as $$
   select (nullif(current_setting('request.jwt.claims', true), '')::jsonb ->> 'sub')::uuid
 $$;
+
+-- ------------------------------------------------- storage schema
+-- Supabase ships a `storage` schema backing the object store; migrations
+-- that configure buckets and their policies expect it. Recreate the minimal
+-- surface on a vanilla database — a real Supabase project already has the
+-- full thing, so every piece below is conditional and both environments can
+-- apply the same files.
+create schema if not exists storage;
+
+do $storage$
+begin
+  if to_regclass('storage.buckets') is null then
+    create table storage.buckets (
+      id text primary key,
+      name text not null,
+      public boolean not null default false,
+      file_size_limit bigint,
+      allowed_mime_types text[],
+      created_at timestamptz not null default now(),
+      updated_at timestamptz not null default now()
+    );
+  end if;
+
+  if to_regclass('storage.objects') is null then
+    create table storage.objects (
+      id uuid primary key default gen_random_uuid(),
+      bucket_id text references storage.buckets (id) on delete cascade,
+      name text not null,
+      owner uuid,
+      metadata jsonb,
+      created_at timestamptz not null default now(),
+      updated_at timestamptz not null default now()
+    );
+    alter table storage.objects enable row level security;
+  end if;
+
+  if not exists (
+    select 1 from pg_proc p join pg_namespace n on n.oid = p.pronamespace
+    where n.nspname = 'storage' and p.proname = 'foldername'
+  ) then
+    create function storage.foldername(name text) returns text[]
+    language sql immutable
+    as $f$ select (string_to_array(name, '/'))[1:array_length(string_to_array(name, '/'), 1) - 1] $f$;
+  end if;
+end
+$storage$;
+
+-- the API roles reach the object store through this schema; a hosted project
+-- granted them already (and its tables are owned by another role, so the
+-- ownership check skips this there)
+do $grants$
+begin
+  if exists (
+    select 1 from pg_class c join pg_namespace n on n.oid = c.relnamespace
+    where n.nspname = 'storage' and c.relname = 'objects'
+      and pg_get_userbyid(c.relowner) = current_user
+  ) then
+    grant usage on schema storage to anon, authenticated, service_role;
+    grant all on storage.buckets, storage.objects to anon, authenticated, service_role;
+  end if;
+end
+$grants$;

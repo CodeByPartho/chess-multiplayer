@@ -1,7 +1,8 @@
 /**
  * Playwright global teardown — deletes everything this e2e run created in the
  * TEST backend: users, guests, games, lobby rows, rating/rating_history rows,
- * puzzle results, profiles and reports.
+ * puzzle results, profiles, reports, and uploaded avatar objects (through the
+ * Storage API — hosted projects block direct SQL writes to storage tables).
  *
  * Two strategies:
  *   sql   FC_TEST_DB_URL is set        → one transaction, exact counts (preferred)
@@ -37,10 +38,11 @@ function readMarker(): RunMarker | null {
 /* SQL strategy                                                         */
 /* ------------------------------------------------------------------ */
 
-async function cleanupWithSql(marker: RunMarker): Promise<Counts> {
+async function cleanupWithSql(marker: RunMarker): Promise<{ counts: Counts; ids: string[] }> {
   const client = new Client({ connectionString: TEST_BACKEND.dbUrl, connectionTimeoutMillis: 30_000 })
   await client.connect()
   const counts: Counts = {}
+  let ids: string[] = []
   try {
     await client.query('begin')
 
@@ -51,7 +53,7 @@ async function cleanupWithSql(marker: RunMarker): Promise<Counts> {
            or coalesce(email, '') like $2`,
       [marker.startedAt, `${TEST_EMAIL_PREFIX}%`],
     )
-    const ids = users.rows.map((row) => row.id)
+    ids = users.rows.map((row) => row.id)
 
     // Each statement gets exactly the parameters it uses: Postgres cannot infer
     // the type of a placeholder the statement never references.
@@ -108,7 +110,50 @@ async function cleanupWithSql(marker: RunMarker): Promise<Counts> {
   } finally {
     await client.end().catch(() => {})
   }
-  return counts
+  return { counts, ids }
+}
+
+/* ------------------------------------------------------------------ */
+/* Storage cleanup (Storage API — direct SQL writes to storage tables  */
+/* are blocked on hosted projects)                                     */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Avatar uploads live in the `avatars` bucket. Supabase refuses direct SQL
+ * deletes on storage tables, so objects are removed through the Storage API
+ * instead: list each user's folder, then delete the files by path (the API
+ * only deletes exact paths, not folders). Best-effort — cleanup trouble must
+ * never fail the run's teardown.
+ */
+async function deleteStorageAvatars(ids: string[]): Promise<number> {
+  let removed = 0
+  for (const uid of ids) {
+    try {
+      const listed = await fetch(`${TEST_BACKEND.supabaseUrl}/storage/v1/object/list/avatars`, {
+        method: 'POST',
+        headers: adminHeaders(),
+        body: JSON.stringify({ prefix: uid, limit: 100 }),
+      })
+      if (!listed.ok) continue
+      const entries = (await listed.json()) as Array<{ name?: string }>
+      const paths = entries
+        .map((entry) => `${uid}/${entry.name ?? ''}`)
+        .filter((path) => path.length > uid.length + 1)
+      if (paths.length === 0) continue
+      const res = await fetch(`${TEST_BACKEND.supabaseUrl}/storage/v1/object/avatars`, {
+        method: 'DELETE',
+        headers: adminHeaders(),
+        body: JSON.stringify({ prefixes: paths }),
+      })
+      if (res.ok) {
+        const rows = (await res.json().catch(() => [])) as unknown
+        if (Array.isArray(rows)) removed += rows.length
+      }
+    } catch {
+      /* best effort */
+    }
+  }
+  return removed
 }
 
 /* ------------------------------------------------------------------ */
@@ -137,7 +182,7 @@ function inList(column: string, ids: string[]): string {
   return `${column}=in.(${ids.join(',')})`
 }
 
-async function cleanupWithRest(marker: RunMarker): Promise<Counts> {
+async function cleanupWithRest(marker: RunMarker): Promise<{ counts: Counts; ids: string[] }> {
   const counts: Counts = {}
 
   // users created by this run (or by earlier interrupted runs)
@@ -180,7 +225,7 @@ async function cleanupWithRest(marker: RunMarker): Promise<Counts> {
   }
   counts['auth.users'] = deletedUsers
 
-  return counts
+  return { counts, ids }
 }
 
 /* ------------------------------------------------------------------ */
@@ -201,8 +246,11 @@ export default async function globalTeardown(): Promise<void> {
     )
   }
 
-  const counts =
+  const cleanup =
     marker.cleanup === 'sql' ? await cleanupWithSql(marker) : await cleanupWithRest(marker)
+  const { counts } = cleanup
+  const removedObjects = await deleteStorageAvatars(cleanup.ids)
+  if (removedObjects > 0) counts['storage.objects'] = removedObjects
 
   const summary = Object.entries(counts)
     .filter(([, n]) => n > 0)
