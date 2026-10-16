@@ -1,6 +1,6 @@
 // Join an invite-link game by code; activates it and returns the game id.
 import { CORS_HEADERS, json, bad } from '../_shared/cors.ts'
-import { getUserId, serviceClient, type GameRow } from '../_shared/game.ts'
+import { getUserId, readJsonLimited, serviceClient, type GameRow } from '../_shared/game.ts'
 
 /** waiting invites stop being joinable after 24h (matches the client join screen) */
 const INVITE_TTL_MS = 24 * 60 * 60 * 1000
@@ -13,7 +13,8 @@ Deno.serve(async (req) => {
     const userId = await getUserId(req, supa)
     if (!userId) return bad('unauthorized', 401)
 
-    const body = await req.json()
+    const body = await readJsonLimited(req, 2_048)
+    if (!body) return bad('bad request')
     const code = String(body.code ?? '').trim().toUpperCase()
     if (!code || code.length > 12) return bad('bad code')
 

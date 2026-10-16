@@ -32,11 +32,7 @@
 <body>
   <div id="root"></div>
   <script type="module" src="/src/main.tsx"></script>
-  <script>
-    if ('serviceWorker' in navigator && location.hostname !== 'localhost' && !location.hostname.startsWith('127.')) {
-      window.addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => {}))
-    }
-  </script>
+  <script src="/sw-register.js"></script>
 </body>
 
 </html>
