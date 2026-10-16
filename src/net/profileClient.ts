@@ -12,6 +12,7 @@ export interface ProfileRow {
   username: string
   username_key: string
   avatar_seed: string
+  avatar_path: string | null
   flag: string | null
   created_at: string
 }
@@ -54,7 +55,7 @@ export async function fetchProfileByName(username: string): Promise<ProfileRow |
   if (!key) return null
   const { data, error } = await supabase
     .from('profiles')
-    .select('id, username, username_key, avatar_seed, flag, created_at')
+    .select('id, username, username_key, avatar_seed, avatar_path, flag, created_at')
     .eq('username_key', key)
     .maybeSingle()
   if (error || !data) return null
@@ -65,7 +66,7 @@ export async function fetchProfileByName(username: string): Promise<ProfileRow |
 export async function fetchMyProfile(userId: string): Promise<ProfileRow | null> {
   const { data, error } = await supabase
     .from('profiles')
-    .select('id, username, username_key, avatar_seed, flag, created_at')
+    .select('id, username, username_key, avatar_seed, avatar_path, flag, created_at')
     .eq('id', userId)
     .maybeSingle()
   if (error || !data) return null

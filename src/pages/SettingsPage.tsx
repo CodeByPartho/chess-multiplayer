@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useSettings, updateSettings } from '@/lib/settings'
-import { loadIdentity, saveIdentity, validateUsername, flagOptions, avatarDataUrl, type GuestIdentity } from '@/lib/identity'
+import { loadIdentity, saveIdentity, validateUsername, flagOptions, type GuestIdentity } from '@/lib/identity'
+import { AvatarPicker } from '@/components/AvatarPicker'
 import { boardThemes } from '@/board/themes'
 import { pieceSets, pieceUrl } from '@/board/pieces'
 import { Confirm } from '@/components/Modal'
@@ -92,22 +93,18 @@ export default function SettingsPage() {
         <p className="hint" style={{ marginTop: -6 }}>
           Stored only on this device — no account, no email, no tracking.
         </p>
-        <div style={{ display: 'flex', gap: 14, alignItems: 'center', marginBottom: 14 }}>
-          <img src={avatarDataUrl(identity.avatarSeed, 96)} width={64} height={64} alt="Your avatar" style={{ borderRadius: 8 }} />
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-            <button
-              className="btn btn-sm"
-              onClick={() => {
-                commitIdentity({ avatarSeed: crypto.randomUUID() })
-                toast.show('New avatar generated')
-              }}
-            >
-              🎲 New avatar
-            </button>
-            <button className="btn btn-sm" onClick={() => setFlagOpen((v) => !v)}>
-              {identity.flag ? `${identity.flag} Change flag` : '🏳 Add flag'}
-            </button>
-          </div>
+        <AvatarPicker
+          seed={identity.avatarSeed}
+          name={identity.username}
+          onSeed={(next) => {
+            commitIdentity({ avatarSeed: next })
+            toast.show('Avatar updated')
+          }}
+        />
+        <div style={{ display: 'flex', gap: 10, alignItems: 'center', margin: '10px 0 14px' }}>
+          <button className="btn btn-sm" onClick={() => setFlagOpen((v) => !v)}>
+            {identity.flag ? `${identity.flag} Change flag` : '🏳 Add flag'}
+          </button>
         </div>
 
         {flagOpen && (

@@ -138,6 +138,29 @@ export function avatarDataUrl(seed: string, size = 64): string {
   return `data:image/svg+xml;utf8,${encodeURIComponent(avatarSvg(seed, size))}`
 }
 
+/**
+ * Last-resort avatar for players with no seed at all: their initials on a
+ * card whose hue is derived from the name. Same data-URL contract as
+ * avatarDataUrl, so it drops into the same <img>.
+ */
+export function initialsDataUrl(name: string, size = 64): string {
+  const words = name.trim().split(/\s+/).filter(Boolean)
+  const letters = (words.map((w) => [...w][0] ?? '').join('') || '?').slice(0, 2).toUpperCase()
+  let h = 2166136261
+  for (let i = 0; i < name.length; i++) {
+    h ^= name.charCodeAt(i)
+    h = Math.imul(h, 16777619)
+  }
+  const hue = (h >>> 0) % 360
+  const text = letters.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+  const svg =
+    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="${size}" height="${size}">` +
+    `<rect width="64" height="64" rx="10" fill="hsl(${hue} 42% 24%)"/>` +
+    `<text x="32" y="42" text-anchor="middle" font-family="system-ui,-apple-system,sans-serif" font-size="26" font-weight="600" fill="hsl(${hue} 75% 84%)">${text}</text>` +
+    `</svg>`
+  return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`
+}
+
 const FLAGS = [
   '🇧🇩', '🇮🇳', '🇵🇰', '🇳🇵', '🇱🇰', '🇺🇸', '🇬🇧', '🇩🇪', '🇫🇷', '🇪🇸', '🇮🇹', '🇷🇺', '🇺🇦',
   '🇧🇷', '🇦🇷', '🇨🇱', '🇲🇽', '🇨🇦', '🇦🇺', '🇳🇿', '🇿🇦', '🇪🇬', '🇳🇬', '🇰🇪', '🇲🇦', '🇹🇷',

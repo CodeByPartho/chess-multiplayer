@@ -155,7 +155,7 @@ export default function ProfilePage() {
   return (
     <div className="page narrow">
       <div className="card profile-head">
-        <Avatar seed={p.avatar_seed} size={64} />
+        <Avatar seed={p.avatar_seed} path={p.avatar_path} name={p.username} size={64} />
         <div className="profile-id">
           <h1 style={{ margin: 0 }}>
             {p.username}
