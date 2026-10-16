@@ -69,6 +69,11 @@ describe('legal moves & special rules', () => {
     play(g2, ['e7e8n'])
     expect(g2.plies[0].san).toBe('e8=N+')
   })
+
+  it('legalTargets lists a promotion square once (four moves share it)', () => {
+    const g = new GameCore({ fen: '8/4P1k1/8/8/8/8/2K5/8 w - - 0 1', now: NOW })
+    expect(g.legalTargets('e7')).toEqual(['e8'])
+  })
 })
 
 describe('game endings', () => {

@@ -123,7 +123,9 @@ export function PuzzleBoard({ puzzle, onSolved, onWrong, showSolution = false, c
         onMove={onMove}
         legalTargets={(sq) => {
           try {
-            return chess.moves({ square: sq as Square, verbose: true }).map((m) => m.to)
+            // same dedupe as GameCore.legalTargets — promotions share a square
+            const moves = chess.moves({ square: sq as Square, verbose: true })
+            return [...new Set(moves.map((m) => m.to))]
           } catch {
             return []
           }
