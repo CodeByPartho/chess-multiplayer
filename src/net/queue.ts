@@ -1,7 +1,7 @@
 import type { TimeControl } from '@/lib/chess/types'
 import { ensureAuth, syncGuestProfile, supabase } from './supabase'
 import { fetchRatingFor, fetchRatings } from './ratingsClient'
-import { loadIdentity, saveIdentity } from '@/lib/identity'
+import { loadIdentity, saveIdentity, type Pool } from '@/lib/identity'
 import { categoryOf } from '@/lib/chess/categories'
 
 export type QueueEvent =
@@ -89,7 +89,7 @@ export async function startQueue(
 }
 
 /** merge server ratings into the local identity (post-game / on login) */
-export async function syncRatingsToLocal(): Promise<void> {
+export async function syncRatingsToLocal(lastPool?: Pool): Promise<void> {
   const server = await fetchRatings()
   if (!server) return
   const identity = loadIdentity()
@@ -99,5 +99,6 @@ export async function syncRatingsToLocal(): Promise<void> {
       identity.ratings[pool] = { ...s }
     }
   }
+  if (lastPool && lastPool !== 'puzzle') identity.lastPool = lastPool
   saveIdentity(identity)
 }
