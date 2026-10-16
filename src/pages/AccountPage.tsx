@@ -116,7 +116,13 @@ export default function AccountPage() {
     setLink(provider)
     try {
       const r = await startProviderRedirect(provider, { upgrade: true, next: '/account' })
-      if (!r.ok && r.error) toast.error(r.error)
+      if (!r.ok) {
+        toast.error(
+          r.code === 'linking_disabled'
+            ? `Linking ${provider} needs "manual linking" enabled on the server — it's off right now.`
+            : (r.error ?? 'Could not start sign-in'),
+        )
+      }
     } finally {
       setLink(null)
     }

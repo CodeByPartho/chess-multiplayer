@@ -2,31 +2,39 @@ import { useEffect, useRef, useState } from 'react'
 import {
   OAUTH_PROVIDERS,
   TURNSTILE_SITE_KEY,
+  clearGuestSession,
   completeAuthCallback,
+  createAccountWithEmail,
   isEmail,
   sendEmailOtp,
+  setUpgradeNotice,
+  signInPassword,
   startProviderPopup,
   startProviderRedirect,
-  upgradeGuestEmail,
   verifyEmailOtp,
   verifyUpgradeEmail,
   type OAuthProvider,
 } from '@/net/auth'
 import { ensureAuth, onlineEnabled } from '@/net/supabase'
-import { setUpgradeNotice } from '@/net/auth'
+import { checkUsernameAvailable, claimUsername } from '@/net/profileClient'
+import { loadIdentity, saveIdentity, validateUsername } from '@/lib/identity'
 import { TurnstileWidget } from './Turnstile'
 import { Link } from '@/router'
 
 type View = 'main' | 'email' | 'code'
 export type AuthPurpose = 'signin' | 'upgrade'
+type Availability = { state: 'idle' | 'checking' | 'ok' | 'bad'; message?: string }
 
 /**
- * The shared authentication panel — used by the header modal and /login.
+ * Shared authentication panel — header modal and /login both mount this.
  *
- * upgrade: create an account *from the current guest* (same user id, so
- * rating + games carry over) via linkIdentity / email_change OTP.
- * signin: enter an existing account (OAuth popup or email OTP), replacing
- * the guest session — the guest stays behind untouched.
+ * upgrade: create an account out of the current guest. Email + password go
+ *   through updateUser, which keeps the same user id, so rating and games
+ *   carry over. Providers would need identity linking (see the message when
+ *   the server has that off).
+ * signin: enter an existing account. The guest session is dropped first —
+ *   with a guest still active GoTrue tries to link the two users together
+ *   and that is a server-side error ("Manual linking is disabled").
  */
 export function AuthPanel({
   purpose: initialPurpose,
@@ -39,8 +47,11 @@ export function AuthPanel({
 }) {
   const [purpose, setPurpose] = useState<AuthPurpose>(initialPurpose)
   const [view, setView] = useState<View>('main')
+  const [name, setName] = useState('')
   const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
   const [code, setCode] = useState('')
+  const [avail, setAvail] = useState<Availability>({ state: 'idle' })
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [notice, setNotice] = useState<string | null>(null)
@@ -48,6 +59,7 @@ export function AuthPanel({
   const [sentTo, setSentTo] = useState('')
   const captchaRef = useRef<{ reset: () => void } | null>(null)
   const aliveRef = useRef(true)
+  const checkSeq = useRef(0)
 
   useEffect(() => {
     aliveRef.current = true
@@ -55,6 +67,25 @@ export function AuthPanel({
       aliveRef.current = false
     }
   }, [])
+
+  // live username availability while picking one (sign-up only)
+  useEffect(() => {
+    if (purpose !== 'upgrade') return
+    const trimmed = name.trim()
+    const seq = ++checkSeq.current
+    if (validateUsername(trimmed)) {
+      setAvail({ state: 'idle' })
+      return
+    }
+    setAvail({ state: 'checking' })
+    const t = window.setTimeout(() => {
+      void checkUsernameAvailable(trimmed).then((reason) => {
+        if (seq !== checkSeq.current) return
+        setAvail(reason ? { state: 'bad', message: reason } : { state: 'ok' })
+      })
+    }, 350)
+    return () => window.clearTimeout(t)
+  }, [name, purpose])
 
   const fail = (msg: string | null) => {
     if (aliveRef.current) setError(msg)
@@ -65,6 +96,13 @@ export function AuthPanel({
     window.location.reload()
   }
 
+  const switchPurpose = (p: AuthPurpose) => {
+    setPurpose(p)
+    setError(null)
+    setNotice(null)
+    setView('main')
+  }
+
   const runProvider = async (provider: OAuthProvider) => {
     if (busy) return
     setBusy(true)
@@ -72,16 +110,22 @@ export function AuthPanel({
     setNotice(null)
     try {
       if (purpose === 'upgrade') {
-        await ensureAuth() // make sure the guest session exists to link onto
+        await ensureAuth() // the guest session is the user we're upgrading
         const r = await startProviderRedirect(provider, { upgrade: true, next })
         if (r.ok) return // navigating away
+        if (r.code === 'linking_disabled') {
+          return fail(
+            `Linking ${provider} to a guest isn't switched on here yet — create your account with email + password instead. Your rating and games come along either way.`,
+          )
+        }
         if (r.code === 'already_exists') {
-          // the provider belongs to a different account — offer the switch path
+          // that provider belongs to a different account — offer the switch path
           setUpgradeNotice(
             'That sign-in belongs to another account. Your guest profile — name, rating and games — stays here as its own guest.',
           )
           setPurpose('signin')
           setNotice('Continuing will switch to that account. Your guest stays on this device as a guest.')
+          await clearGuestSession()
           const r2 = await startProviderPopup(provider, next)
           if (r2.ok) return finish()
           if (r2.error === 'popup_closed') return fail('The sign-in window was closed before finishing.')
@@ -90,6 +134,7 @@ export function AuthPanel({
         return fail(r.error ?? 'Could not start sign-in.')
       }
 
+      await clearGuestSession()
       const r = await startProviderPopup(provider, next)
       if (r.ok) return finish()
       if (r.error === 'popup_closed') return fail('The sign-in window was closed before finishing.')
@@ -99,6 +144,7 @@ export function AuthPanel({
     }
   }
 
+  /** sign-in by email code — a guest session must be gone first (see module docs) */
   const sendCode = async () => {
     if (busy || !isEmail(email)) {
       if (!isEmail(email)) setError('Enter a valid email address')
@@ -107,17 +153,12 @@ export function AuthPanel({
     setBusy(true)
     setError(null)
     try {
-      if (purpose === 'upgrade') {
-        await ensureAuth()
-        const r = await upgradeGuestEmail(email.trim())
-        if (!r.ok) return fail(r.error ?? 'Could not send the code')
-      } else {
-        const r = await sendEmailOtp(email.trim(), captchaToken || undefined)
-        if (!r.ok) {
-          captchaRef.current?.reset()
-          setCaptchaToken('')
-          return fail(r.error ?? 'Could not send the code')
-        }
+      await clearGuestSession()
+      const r = await sendEmailOtp(email.trim(), captchaToken || undefined)
+      if (!r.ok) {
+        captchaRef.current?.reset()
+        setCaptchaToken('')
+        return fail(r.error ?? 'Could not send the code')
       }
       if (!aliveRef.current) return
       setSentTo(email.trim())
@@ -126,6 +167,81 @@ export function AuthPanel({
     } finally {
       if (aliveRef.current) setBusy(false)
     }
+  }
+
+  /** sign-in with password */
+  const signIn = async () => {
+    if (busy) return
+    if (!isEmail(email)) return setError('Enter a valid email address')
+    if (!password) return setError('Enter your password')
+    setBusy(true)
+    setError(null)
+    try {
+      await clearGuestSession()
+      const r = await signInPassword(email.trim(), password)
+      if (!r.ok) {
+        return fail(
+          /invalid login/i.test(r.error ?? '')
+            ? 'Wrong email or password. You can also sign in with a one-time code instead.'
+            : (r.error ?? 'Could not sign in'),
+        )
+      }
+      finish()
+    } finally {
+      if (aliveRef.current) setBusy(false)
+    }
+  }
+
+  /** create the account from the guest, then claim the username */
+  const createAccount = async () => {
+    const trimmed = name.trim()
+    if (busy) return
+    const nameErr = validateUsername(trimmed)
+    if (nameErr) return setError(nameErr)
+    if (avail.state !== 'ok') return setError('Pick a username that is available')
+    if (!isEmail(email)) return setError('Enter a valid email address')
+    if (password.length < 6) return setError('Passwords need at least 6 characters')
+    setBusy(true)
+    setError(null)
+    try {
+      await ensureAuth() // every account starts as a guest; the id is what we keep
+      const r = await createAccountWithEmail(email.trim(), password)
+      if (!r.ok) {
+        if (/already|registered|in use/i.test(r.error ?? '')) {
+          setPurpose('signin')
+          setNotice('That email already has an account — sign in with your password below.')
+          return
+        }
+        return fail(r.error ?? 'Could not create the account')
+      }
+      if (r.needsCode) {
+        setSentTo(email.trim())
+        setCode('')
+        setView('code')
+        return
+      }
+      await finishAccount()
+    } finally {
+      if (aliveRef.current) setBusy(false)
+    }
+  }
+
+  /** account exists now — claim the username so the profile is live */
+  const finishAccount = async () => {
+    const trimmed = name.trim()
+    const identity = loadIdentity()
+    const r = await claimUsername(trimmed, identity.avatarSeed, identity.flag)
+    if (r.ok) {
+      identity.username = trimmed
+      saveIdentity(identity)
+      window.dispatchEvent(new Event('fc:profile-changed'))
+      finish()
+      return
+    }
+    // the account is fine; the name just got taken in the meantime — the
+    // onboarding dialog will offer another one
+    setUpgradeNotice(`Your account is ready. "${trimmed}" was taken in the meantime — pick another username.`)
+    finish()
   }
 
   const checkCode = async () => {
@@ -143,6 +259,10 @@ export function AuthPanel({
           ? await verifyUpgradeEmail(sentTo, token)
           : await verifyEmailOtp(sentTo, token)
       if (!r.ok) return fail(r.error ?? 'That code did not work — check it and try again.')
+      if (purpose === 'upgrade') {
+        await finishAccount()
+        return
+      }
       finish()
     } finally {
       if (aliveRef.current) setBusy(false)
@@ -162,6 +282,17 @@ export function AuthPanel({
     purpose === 'upgrade'
       ? 'Keep your guest name, rating and games — they move with you.'
       : 'Sign in to your profile, ratings and game archive.'
+
+  const nameState =
+    avail.state === 'checking'
+      ? 'checking…'
+      : avail.state === 'ok'
+        ? 'available'
+        : avail.state === 'bad'
+          ? (avail.message ?? 'unavailable')
+          : name.length > 0
+            ? (validateUsername(name.trim()) ?? '')
+            : ''
 
   return (
     <div className="auth-panel">
@@ -207,9 +338,36 @@ export function AuthPanel({
           className="auth-form"
           onSubmit={(e) => {
             e.preventDefault()
-            void sendCode()
+            void (purpose === 'upgrade' ? createAccount() : signIn())
           }}
         >
+          {purpose === 'upgrade' && (
+            <>
+              <label className="field-label" htmlFor="auth-name">
+                Username
+              </label>
+              <input
+                id="auth-name"
+                className="input"
+                autoFocus
+                maxLength={20}
+                autoComplete="username"
+                placeholder="e.g. KnightOwl42"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                aria-describedby="auth-name-state"
+                aria-invalid={avail.state === 'bad'}
+              />
+              <p
+                id="auth-name-state"
+                className={`field-hint ${avail.state === 'ok' ? 'ok' : avail.state === 'bad' ? 'bad' : ''}`}
+                aria-live="polite"
+              >
+                {nameState}
+              </p>
+            </>
+          )}
+
           <label className="field-label" htmlFor="auth-email">
             Email address
           </label>
@@ -217,23 +375,51 @@ export function AuthPanel({
             id="auth-email"
             className="input"
             type="email"
-            autoFocus
+            autoFocus={purpose !== 'upgrade'}
             autoComplete="email"
             placeholder="you@example.com"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
           />
-          {TURNSTILE_SITE_KEY && (
+
+          <label className="field-label" htmlFor="auth-password">
+            Password
+          </label>
+          <input
+            id="auth-password"
+            className="input"
+            type="password"
+            autoComplete={purpose === 'upgrade' ? 'new-password' : 'current-password'}
+            placeholder={purpose === 'upgrade' ? 'at least 6 characters' : 'your password'}
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+          />
+
+          {purpose === 'signin' && TURNSTILE_SITE_KEY && (
             <TurnstileWidget sitekey={TURNSTILE_SITE_KEY} onToken={setCaptchaToken} refCb={captchaRef} />
           )}
+
           <div className="auth-row">
             <button type="button" className="btn btn-ghost" onClick={() => setView('main')} disabled={busy}>
               Back
             </button>
-            <button type="submit" className="btn btn-primary" disabled={busy || (TURNSTILE_SITE_KEY !== '' && !captchaToken)}>
-              {busy ? 'Sending…' : 'Send code'}
+            <button type="submit" className="btn btn-primary" disabled={busy}>
+              {busy ? 'Working…' : purpose === 'upgrade' ? 'Create account' : 'Sign in'}
             </button>
           </div>
+
+          {purpose === 'signin' && (
+            <div className="auth-switch">
+              <button
+                type="button"
+                className="link-btn"
+                onClick={() => void sendCode()}
+                disabled={busy || (TURNSTILE_SITE_KEY !== '' && !captchaToken)}
+              >
+                Email me a one-time code instead
+              </button>
+            </div>
+          )}
         </form>
       )}
 
@@ -246,7 +432,9 @@ export function AuthPanel({
           }}
         >
           <p className="auth-note">
-            We sent a 6-digit code to <b>{sentTo}</b>. It expires in a few minutes.
+            {purpose === 'upgrade' ? 'One last step — we emailed a code to ' : 'We sent a 6-digit code to '}
+            <b>{sentTo}</b>
+            {purpose === 'upgrade' ? ' to finish setting up your account.' : '. It expires in a few minutes.'}
           </p>
           <label className="field-label" htmlFor="auth-code">
             Verification code
@@ -264,7 +452,7 @@ export function AuthPanel({
           />
           <div className="auth-row">
             <button type="button" className="btn btn-ghost" onClick={() => setView('email')} disabled={busy}>
-              Use a different email
+              {purpose === 'upgrade' ? 'Back' : 'Use a different email'}
             </button>
             <button type="submit" className="btn btn-primary" disabled={busy}>
               {busy ? 'Verifying…' : 'Verify'}
@@ -275,27 +463,11 @@ export function AuthPanel({
 
       <div className="auth-switch">
         {purpose === 'upgrade' ? (
-          <button
-            className="link-btn"
-            onClick={() => {
-              setPurpose('signin')
-              setError(null)
-              setNotice(null)
-              setView('main')
-            }}
-          >
+          <button className="link-btn" onClick={() => switchPurpose('signin')}>
             Already have an account? Sign in
           </button>
         ) : (
-          <button
-            className="link-btn"
-            onClick={() => {
-              setPurpose('upgrade')
-              setError(null)
-              setNotice(null)
-              setView('main')
-            }}
-          >
+          <button className="link-btn" onClick={() => switchPurpose('upgrade')}>
             New here? Create an account
           </button>
         )}
