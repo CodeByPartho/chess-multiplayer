@@ -22,6 +22,31 @@ export async function getUserId(req: Request, supa: SupabaseClient): Promise<str
   return data.user.id
 }
 
+/**
+ * Parse a JSON request body with a hard size ceiling (bytes). Every handler
+ * caps its body before parsing so an oversized payload never reaches
+ * JSON.parse or the database. Returns null for missing/oversized/malformed
+ * bodies — callers answer 400.
+ */
+export async function readJsonLimited(req: Request, maxBytes: number): Promise<Record<string, unknown> | null> {
+  const declared = Number(req.headers.get('content-length') ?? '0')
+  if (Number.isFinite(declared) && declared > maxBytes) return null
+  let text: string
+  try {
+    text = await req.text()
+  } catch {
+    return null
+  }
+  if (text.length > maxBytes) return null
+  try {
+    const parsed = JSON.parse(text)
+    if (parsed === null || typeof parsed !== 'object' || Array.isArray(parsed)) return null
+    return parsed as Record<string, unknown>
+  } catch {
+    return null
+  }
+}
+
 export interface PlyRec {
   uci: string
   san: string

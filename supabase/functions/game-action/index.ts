@@ -7,6 +7,7 @@ import {
   endGame,
   getUserId,
   loadGame,
+  readJsonLimited,
   remainingMs,
   replayChess,
   serviceClient,
@@ -27,7 +28,8 @@ Deno.serve(async (req) => {
     const userId = await getUserId(req, supa)
     if (!userId) return bad('unauthorized', 401)
 
-    const body = await req.json()
+    const body = await readJsonLimited(req, 8_192)
+    if (!body) return bad('bad request')
     const gameId = String(body.gameId ?? '')
     const action = String(body.action ?? '')
     if (!gameId || !action) return bad('bad request')

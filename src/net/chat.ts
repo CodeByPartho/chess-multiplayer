@@ -28,8 +28,15 @@ export function openChat(gameId: string, onMsg: (m: ChatMsg) => void, onSecret?:
   const channel = supabase
     .channel(`chat-${gameId}`)
     .on('broadcast', { event: 'chat' }, ({ payload }) => {
-      const m = payload as ChatMsg
-      if (m && typeof m.text === 'string') onMsg(m)
+      // a hostile broadcaster controls the payload — bound everything shown
+      const m = payload as Partial<ChatMsg> | null
+      if (!m || typeof m.text !== 'string' || typeof m.fromId !== 'string') return
+      onMsg({
+        from: String(m.from ?? '').slice(0, 24),
+        fromId: m.fromId.slice(0, 64),
+        text: m.text.slice(0, 300),
+        at: Number.isFinite(m.at) ? Number(m.at) : Date.now(),
+      })
     })
     .subscribe()
 

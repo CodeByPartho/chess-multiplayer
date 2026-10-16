@@ -15,6 +15,9 @@
  *     account deletion with anonymized game archives.
  *   * Write paths — client roles can never write ratings/history/results
  *     directly (REVOKE + RLS), and the leaderboard RPC is signed-in-only.
+ *   * Security hardening (0019) — per-user rate limits enforced inside the
+ *     RPCs, player-only game finalization, reports written only by the gated
+ *     edge function, and the avatars bucket (public reads, own-folder writes).
  *   * Puzzle ratings — the RPC takes no rating channel at all (the old
  *     client-fed function is gone), replays are idempotent, and rapid-fire
  *     submissions are rate limited.
@@ -56,6 +59,7 @@ const ALLOWED_FUNCTIONS = [
   'leaderboard(text,integer,integer)',
   'puzzle_leaderboard(integer,integer)',
   'queue_match(jsonb,boolean,integer)',
+  'rate_check(uuid,text,integer,integer)',
   'record_puzzle_result(text,boolean,bigint,bigint)',
   'sync_guest(text,text,text)',
   'tc_category(jsonb)',
@@ -88,6 +92,8 @@ describe.skipIf(!RUN)('server rating stack (TEST database — never production)'
   let bob = ''
   let dave = ''
   let zoe = ''
+  /** throwaway accounts created by the security tests — cleaned up in afterAll */
+  const extraUsers: string[] = []
 
   const q = async (sql: string, params: unknown[] = []) => (await db.query(sql, params)).rows
   const one = async (sql: string, params: unknown[] = []) => (await db.query(sql, params)).rows[0]
@@ -141,6 +147,13 @@ describe.skipIf(!RUN)('server rating stack (TEST database — never production)'
     return id
   }
 
+  /** like createUser, but auto-registered for afterAll cleanup */
+  const createTempUser = async (local: string): Promise<string> => {
+    const id = await createUser(local)
+    extraUsers.push(id)
+    return id
+  }
+
   beforeAll(async () => {
     server = await startTestDb()
     db = new Client(server.client)
@@ -170,7 +183,7 @@ describe.skipIf(!RUN)('server rating stack (TEST database — never production)'
     try {
       if (alice || bob || dave || zoe) {
         await asPostgres()
-        const ids = [alice, bob, dave, zoe].filter(Boolean)
+        const ids = [alice, bob, dave, zoe, ...extraUsers].filter(Boolean)
         // finish/nul seats first (FK: games reference the seat owners)
         await q(
           `update public.games set status = 'over',
@@ -695,5 +708,181 @@ describe.skipIf(!RUN)('server rating stack (TEST database — never production)'
     // the refused submission never touched the rating
     const after = await one(`select games from public.ratings where user_id = $1 and category = 'puzzle'`, [zoe])
     expect(Number(after.games)).toBe(gamesBefore + 3)
+  })
+
+  /* ------------------------------------------------------------------ */
+  /* security hardening (0019)                                           */
+  /* ------------------------------------------------------------------ */
+
+  /** seed the counter rate_check() will look at for this window */
+  const seedWindow = async (user: string, bucket: string, count: number, secs: number) => {
+    await asPostgres()
+    await q(
+      `insert into public.rate_limits (user_id, bucket, window_start, count)
+       values ($1, $2, to_timestamp(floor(extract(epoch from now()) / ${secs}) * ${secs}), $3)
+       on conflict (user_id, bucket, window_start) do update set count = $3`,
+      [user, bucket, count],
+    )
+  }
+
+  it('queue_match enforces a per-user ceiling and refuses past it', async () => {
+    const spam = await createTempUser('Spam')
+    const other = await createTempUser('QueueOther')
+    const tc = JSON.stringify({ base: 300000, inc: 0, type: 'blitz' })
+
+    await seedWindow(spam, 'queue_match', 60, 60)
+    await asUser(spam)
+    await expect(one(`select public.queue_match($1::jsonb, true, 200) as r`, [tc])).rejects.toThrow(
+      /Too many matchmaking requests/,
+    )
+
+    // the ceiling is per user — a different account still queues fine
+    await asUser(other)
+    const ok = (await one(`select public.queue_match($1::jsonb, true, 200) as r`, [tc])).r as { status: string }
+    expect(ok.status).toBe('waiting')
+
+    // and the counter really moved for the throttled user — the refused call
+    // rolled its increment back with the exception, so the seed value is what
+    // remains (enforcement holds either way: the window is over its limit)
+    await asPostgres()
+    const max = await one(
+      `select max(count) as n from public.rate_limits where user_id = $1 and bucket = 'queue_match'`,
+      [spam],
+    )
+    expect(Number(max.n)).toBe(60)
+  })
+
+  it('check_username and update_username pace typing spam with friendly reasons', async () => {
+    const busy = await createTempUser('Busy')
+    await asPostgres()
+    await q(`insert into public.profiles (id, username) values ($1, $2) on conflict (id) do nothing`, [
+      busy,
+      `Busy${busy.slice(0, 8)}`,
+    ])
+
+    await seedWindow(busy, 'check_username', 120, 60)
+    await asUser(busy)
+    const e = (await one(`select public.check_username($1) as e`, ['Whatever'])).e as string
+    expect(e).toMatch(/Too many checks/)
+
+    await seedWindow(busy, 'update_username', 10, 3600)
+    await asUser(busy)
+    const u = (await one(`select public.update_username($1) as r`, ['Whatever'])).r as {
+      ok: boolean
+      error: string
+    }
+    expect(u.ok).toBe(false)
+    expect(u.error).toMatch(/Too many changes/)
+  })
+
+  it('touch_guest goes silent past the ceiling instead of erroring', async () => {
+    const hb = await createTempUser('Heartbeat')
+
+    // a normal heartbeat stamps last_seen…
+    await asUser(hb)
+    await q(`select public.touch_guest()`)
+    await asPostgres()
+    const seen1 = (await one(`select last_seen from public.guests where id = $1`, [hb])).last_seen
+    expect(seen1).toBeTruthy()
+
+    // …at the ceiling it must stop writing, without raising
+    await q(`update public.guests set last_seen = '2000-01-01T00:00:00Z' where id = $1`, [hb])
+    await seedWindow(hb, 'touch_guest', 60, 60)
+    await asUser(hb)
+    await q(`select public.touch_guest()`)
+    await asPostgres()
+    const seen2 = (await one(`select last_seen from public.guests where id = $1`, [hb])).last_seen
+    expect(new Date(seen2).getUTCFullYear()).toBe(2000)
+  })
+
+  it('finalize_game is player-only — a stranger with the game id changes nothing', async () => {
+    const pw = await createTempUser('PlayerW')
+    const pb = await createTempUser('PlayerB')
+    const stranger = await createTempUser('NoPlayer')
+    const g = await makeGame(pw, pb, 4)
+
+    await asUser(stranger)
+    const refused = (await one(`select public.finalize_game($1) as r`, [g.id])).r as {
+      changed: boolean
+      reason: string
+    }
+    expect(refused.changed).toBe(false)
+    expect(refused.reason).toBe('not_a_player')
+    await asPostgres()
+    expect((await q(`select 1 from public.rating_history where game_id = $1`, [g.id])).length).toBe(0)
+
+    // …but one of the actual players still can
+    await asUser(pw)
+    const done = (await one(`select public.finalize_game($1) as r`, [g.id])).r as { changed: boolean }
+    expect(done.changed).toBe(true)
+  })
+
+  it('reports have exactly one writer: the gated edge function, not the client', async () => {
+    const insert = `insert into public.reports (reporter_id, reported_id, game_id, reason)
+                    values ($1, $2, null, 'direct writes are closed') returning id`
+
+    await asUser(alice)
+    await expect(one(insert, [alice, bob])).rejects.toThrow(/row-level security/)
+
+    await asAnon()
+    await expect(one(insert, [alice, bob])).rejects.toThrow()
+  })
+
+  it('rate_limits: owners can read their counters, nobody writes them directly', async () => {
+    await asUser(alice)
+    await q(`select * from public.rate_limits`)
+    await expect(
+      q(`insert into public.rate_limits (user_id, bucket, window_start, count) values ($1, 'x', now(), 1)`, [
+        alice,
+      ]),
+    ).rejects.toThrow(/permission denied/)
+
+    await asAnon()
+    await expect(q(`select * from public.rate_limits`)).rejects.toThrow(/permission denied/)
+  })
+
+  it('avatars bucket: public reads, writes confined to the owner folder', async () => {
+    await asPostgres()
+    const bucket = await one(`select public from storage.buckets where id = 'avatars'`)
+    expect(bucket?.public).toBe(true)
+
+    // hosted projects guard direct SQL deletes on storage tables (the Storage
+    // API is the only deleter there); the no-op probe tells the two apart
+    const directDeletesWork = await q(`delete from storage.objects where false`)
+      .then(() => true)
+      .catch(() => false)
+    await asPostgres()
+
+    const mine = `${alice}/it-avatar.jpg`
+    const theirs = `${bob}/it-avatar.jpg`
+
+    // anonymous readers can browse the bucket…
+    await asAnon()
+    await q(`select 1 from storage.objects where bucket_id = 'avatars' limit 1`)
+    // …but cannot write
+    await expect(
+      one(`insert into storage.objects (bucket_id, name) values ('avatars', $1) returning id`, [mine]),
+    ).rejects.toThrow()
+
+    await asUser(alice)
+    await one(`insert into storage.objects (bucket_id, name) values ('avatars', $1) returning id`, [mine])
+    // another user's folder is off-limits…
+    await expect(
+      one(`insert into storage.objects (bucket_id, name) values ('avatars', $1) returning id`, [theirs]),
+    ).rejects.toThrow(/row-level security/)
+    // …including via rename (the update with-check; the stored row cannot be
+    // renamed out of the owner's folder)
+    await expect(
+      q(`update storage.objects set name = $1 where name = $2`, [`${bob}/stolen.jpg`, mine]),
+    ).rejects.toThrow(/row-level security|not allowed/i)
+
+    await asPostgres()
+    // embedded runs can drop the probe row; hosted keeps it (metadata only,
+    // invisible, test project) because direct storage deletes are guarded
+    if (directDeletesWork) {
+      await q(`delete from storage.objects where name = any(array[$1, $2])`, [mine, theirs])
+    } else {
+      await q(`delete from storage.objects where name = any(array[$1, $2])`, [mine, theirs]).catch(() => {})
+    }
   })
 })

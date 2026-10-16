@@ -9,9 +9,9 @@ import { clickButton, gotoPath } from './helpers'
  * profiles.avatar_seed and every surface that renders an avatar — nav
  * chip, public profile, game records — resolves the same seed.
  *
- * The upload half of the feature talks to the `avatars` storage bucket,
- * which ships with the security migration — its end-to-end coverage lives
- * with that migration's tests.
+ * Uploads go to the public-read `avatars` storage bucket whose policies ship
+ * with the security migration (write only into avatars/<uid>/...). The last
+ * test exercises the whole path against that live bucket.
  */
 
 const SB_URL = TEST_BACKEND.supabaseUrl
@@ -105,5 +105,52 @@ test.describe.serial('avatars from chess history', () => {
     // visitors see the same face on the public profile
     await gotoPath(page, `/@${USERNAME}`)
     await expect(page.locator('.profile-head img')).toHaveAttribute('src', /capablanca.*\.jpg/, { timeout: 10_000 })
+  })
+
+  test('an uploaded photo lands in the avatars bucket and becomes the avatar', async ({ page }) => {
+    // each test gets a fresh context — sign back in to the account above
+    await gotoPath(page, '/login')
+    await clickButton(page, 'Continue with email', 3_000) // sign-in may show the chooser first
+    await page.locator('#auth-email').waitFor({ state: 'visible', timeout: 15_000 })
+    await page.locator('#auth-email').fill(EMAIL)
+    await page.locator('#auth-password').fill(PASSWORD)
+    await page.locator('.auth-panel button[type="submit"]').click()
+    await expect(page.locator('.acct-btn:visible')).toContainText(USERNAME, { timeout: 45_000 })
+
+    const uid = await sessionUserId(page)
+    expect(uid).toBeTruthy()
+
+    await gotoPath(page, '/account')
+    // the upload button only renders once the profile row is loaded
+    await page.getByRole('button', { name: 'Upload avatar' }).waitFor({ state: 'visible', timeout: 20_000 })
+    // a tiny valid PNG — the client center-crops + re-encodes it before upload
+    const png = Buffer.from(
+      'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==',
+      'base64',
+    )
+    await page.locator('input[type="file"]').setInputFiles({ name: 'face.png', mimeType: 'image/png', buffer: png })
+
+    // the nav chip flips to the stored file (public storage URL), not the identicon
+    await expect(page.locator('.nav-chip:visible img').first()).toHaveAttribute(
+      'src',
+      /storage\/v1\/object\/public\/avatars\//,
+      { timeout: 30_000 },
+    )
+
+    // profiles.avatar_path points inside the owner's folder…
+    let path = ''
+    for (let i = 0; i < 40; i++) {
+      const rows = await restGet(`profiles?id=eq.${uid}&select=avatar_path`)
+      path = String(rows[0]?.avatar_path ?? '')
+      if (path.startsWith(`${uid}/`)) break
+      await page.waitForTimeout(400)
+    }
+    expect(path).toMatch(new RegExp(`^${uid}/`))
+
+    // …and the object is publicly fetchable with an image content type
+    const url = `${SB_URL}/storage/v1/object/public/avatars/${path.split('/').map(encodeURIComponent).join('/')}`
+    const res = await fetch(url)
+    expect(res.status).toBe(200)
+    expect(res.headers.get('content-type') ?? '').toMatch(/image\/(webp|jpeg|png)/)
   })
 })

@@ -1,7 +1,7 @@
 // Create an invite-link game. The creator picks a color (or random);
 // the opponent slot is filled by game-join.
 import { CORS_HEADERS, json, bad } from '../_shared/cors.ts'
-import { getUserId, serviceClient, validTc, randCode } from '../_shared/game.ts'
+import { getUserId, readJsonLimited, serviceClient, validTc, randCode } from '../_shared/game.ts'
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS_HEADERS })
@@ -11,7 +11,8 @@ Deno.serve(async (req) => {
     const userId = await getUserId(req, supa)
     if (!userId) return bad('unauthorized', 401)
 
-    const body = await req.json()
+    const body = await readJsonLimited(req, 4_096)
+    if (!body) return bad('bad request')
     const tc = body.tc
     if (!validTc(tc)) return bad('invalid time control')
     const rated = body.rated === true // invites default to casual
