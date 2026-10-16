@@ -55,7 +55,7 @@ export async function fetchProfileByName(username: string): Promise<ProfileRow |
   if (!key) return null
   const { data, error } = await supabase
     .from('profiles')
-    .select('id, username, username_key, avatar_seed, avatar_path, flag, created_at')
+    .select('*')
     .eq('username_key', key)
     .maybeSingle()
   if (error || !data) return null
@@ -64,9 +64,11 @@ export async function fetchProfileByName(username: string): Promise<ProfileRow |
 
 /** my profile row, if this session belongs to a registered account */
 export async function fetchMyProfile(userId: string): Promise<ProfileRow | null> {
+  // `*` deliberately: the site can deploy before a profile column does, and a
+  // missing avatar_path should mean "no uploaded avatar", not a failed read
   const { data, error } = await supabase
     .from('profiles')
-    .select('id, username, username_key, avatar_seed, avatar_path, flag, created_at')
+    .select('*')
     .eq('id', userId)
     .maybeSingle()
   if (error || !data) return null
