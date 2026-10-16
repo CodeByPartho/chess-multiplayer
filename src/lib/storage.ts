@@ -40,4 +40,5 @@ export const STORAGE_KEYS = {
   settings: 'cm.settings',
   history: 'cm.history',
   seenGames: 'cm.seenGames',
+  authNotice: 'cm.authNotice',
 } as const

@@ -7,8 +7,8 @@ import { GameClock } from '@/components/Clock'
 import { MoveList } from '@/components/MoveList'
 import { EvalBar, formatEval } from '@/components/EvalBar'
 import { Confirm } from '@/components/Modal'
-import { Engine, type Score } from '@/engine/engine'
-import { COMPUTER_LEVELS, thinkTimeFor } from '@/game/computerLevels'
+import { Engine, type Score, type Analysis } from '@/engine/engine'
+import { COMPUTER_LEVELS, thinkTimeFor, botPolicyFor } from '@/game/computerLevels'
 import { useSettings } from '@/lib/settings'
 import { loadIdentity } from '@/lib/identity'
 import { saveGame } from '@/lib/history'
@@ -23,6 +23,34 @@ const TC_PRESETS: { label: string; tc: TimeControl | null }[] = [
   { label: '5 + 3', tc: { base: 300_000, inc: 3_000, type: 'blitz', label: '5+3' } },
   { label: '10 + 0', tc: { base: 600_000, inc: 0, type: 'rapid', label: '10+0' } },
 ]
+
+/** comparable value for a search line (side-to-move perspective, higher = better) */
+function lineValue(l: { score: Score }): number {
+  const s = l.score
+  if (s.mate !== undefined) return s.mate > 0 ? 5000 - s.mate : -5000 - s.mate
+  return s.cp ?? 0
+}
+
+/**
+ * Controlled blunder injection for the weak ladder band: mostly the best
+ * line, sometimes another reasonable one, and at the level's rate the worst
+ * line the shallow search returned — a real, playable mistake rather than
+ * random nonsense. Strong levels always play the engine's first choice.
+ */
+function pickEngineMove(res: Analysis, blunderPct: number): string {
+  const candidates = res.lines.filter((l) => l.pv.length > 0)
+  if (blunderPct <= 0 || candidates.length < 2) return res.bestmove ?? ''
+  const roll = Math.random() * 100
+  if (roll < blunderPct) {
+    const worst = candidates.reduce((a, b) => (lineValue(a) <= lineValue(b) ? a : b))
+    return worst.pv[0]
+  }
+  if (roll < blunderPct + 18) {
+    const pick = candidates[Math.floor(Math.random() * candidates.length)]
+    return pick.pv[0]
+  }
+  return res.bestmove ?? ''
+}
 
 export default function ComputerPage() {
   const [setup, setSetup] = useState<{
@@ -55,8 +83,8 @@ function ComputerSetup({ onStart }: { onStart: (s: { level: number; userColor: C
       <div className="card">
         <h2>Play vs computer</h2>
         <p style={{ color: 'var(--text-dim)', fontSize: 14.5, marginTop: -4 }}>
-          Twenty personalities from absolute beginner to full-strength Stockfish. Hints and takebacks allowed — these games
-          don&apos;t affect your rating.
+          Twenty personalities on a ladder from ~200 up to full-strength Stockfish. Hints and
+          takebacks allowed — these games don&apos;t affect your rating.
         </p>
 
         <div className="field">
@@ -135,6 +163,7 @@ function ComputerGame({
   const settings = useSettings()
   const identity = useMemo(() => loadIdentity(), [])
   const lvl = COMPUTER_LEVELS[setup.level - 1]
+  const policy = useMemo(() => botPolicyFor(setup.level), [setup.level])
   const engineColor: Color = setup.userColor === 'w' ? 'b' : 'w'
 
   const s = useGameSession({
@@ -165,7 +194,7 @@ function ComputerGame({
           return
         }
         eng = e
-        e.setSkill(setup.level)
+        e.setSkill(setup.level, lvl.elo)
         setEngine(e)
       })
       .catch((err: Error) => setEngineError(err.message))
@@ -179,24 +208,28 @@ function ComputerGame({
   const turn = s.turn
   const fen = s.core.fen
 
-  // engine move
+  // engine move (weak levels: shallow depth + controlled blunder injection)
   useEffect(() => {
     if (!engine || over || turn !== engineColor) return
     let cancelled = false
     setThinking(true)
     engine
-      .analyze(fen, { movetime: thinkTimeFor(setup.level) })
+      .analyze(fen, {
+        movetime: thinkTimeFor(setup.level),
+        depth: policy.depth,
+        multiPv: policy.weak ? 4 : 1,
+      })
       .then((res) => {
         if (cancelled) return
         setThinking(false)
         if (!res.bestmove || s.over) return
-        s.applyExternalMove(res.bestmove)
+        s.applyExternalMove(pickEngineMove(res, policy.blunderPct))
       })
       .catch(() => setThinking(false))
     return () => {
       cancelled = true
     }
-  }, [engine, fen, over, turn, engineColor, setup.level]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [engine, fen, over, turn, engineColor, setup.level, policy]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // background eval for the bar (after each move, when idle)
   useEffect(() => {

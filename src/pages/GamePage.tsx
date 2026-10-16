@@ -4,6 +4,7 @@ import { useGameSession, capturedPieces } from '@/game/useGameSession'
 import { GameCore } from '@/lib/chess/game'
 import { useNavKeys, type NavAction } from '@/game/useNavKeys'
 import { PlayerStrip } from '@/components/PlayerStrip'
+import { RatingCountUp } from '@/components/RatingCountUp'
 import { GameClock } from '@/components/Clock'
 import { MoveList } from '@/components/MoveList'
 import { Chat } from '@/components/Chat'
@@ -19,13 +20,14 @@ import { copyText } from '@/lib/clipboard'
 import { Link, useRoute } from '@/router'
 import { ensureAuth, onlineEnabled, myUserId, touchGuest } from '@/net/supabase'
 import { fetchGame, fetchPlayers, subscribeGame, sendAction, reportPlayer, toCorePly, type PlayerInfo, type ServerGame } from '@/net/gameClient'
-import { pullRatingAfterGame } from '@/net/queue'
-import { loadAutopilot } from '@/net/autopilot'
-import { engineMoveTime } from '@/net/autopilotPolicy'
-import { Engine } from '@/engine/engine'
+import { finalizeGame, fetchRatingFor, type FinalizeResult } from '@/net/ratingsClient'
+import { syncRatingsToLocal } from '@/net/queue'
+import { previewDeltas } from '@/lib/chess/rating200'
+import { categoryOf } from '@/lib/chess/categories'
 import type { Color, EndReason } from '@/lib/chess/types'
 
 const DISCONNECT_CLAIM_MS = 120_000
+const fmtSigned = (n: number) => (n > 0 ? `+${n}` : `${n}`)
 
 export default function GamePage({ gameId }: { gameId: string }) {
   const [game, setGame] = useState<ServerGame | null>(null)
@@ -119,7 +121,10 @@ export default function GamePage({ gameId }: { gameId: string }) {
 
   const me: Color | null = myId ? (game.white_id === myId ? 'w' : game.black_id === myId ? 'b' : null) : null
 
-  if (me === null && myId !== null) {
+  // spectators are welcome once the game is over (shared replays + archives);
+  // live games stay restricted to the two seats
+  const finished = game.status === 'over' || game.status === 'aborted'
+  if (me === null && myId !== null && !finished) {
     return (
       <div className="center-page">
         <h2>This invite is not for you (yet)</h2>
@@ -139,6 +144,7 @@ export default function GamePage({ gameId }: { gameId: string }) {
       setGame={setGame}
       players={players}
       me={me}
+      myId={myId}
       conn={conn}
     />
   )
@@ -165,6 +171,7 @@ function OnlineGameView({
   setGame,
   players,
   me,
+  myId,
   conn,
 }: {
   gameId: string
@@ -172,6 +179,7 @@ function OnlineGameView({
   setGame: React.Dispatch<React.SetStateAction<ServerGame | null>>
   players: { white: PlayerInfo | null; black: PlayerInfo | null } | null
   me: Color | null
+  myId: string | null
   conn: 'connecting' | 'live' | 'lost'
 }) {
   const settings = useSettings()
@@ -189,10 +197,13 @@ function OnlineGameView({
   const [showPgn, setShowPgn] = useState(false)
   const [ratingDelta, setRatingDelta] = useState<number | null>(null)
   const [myFinalRating, setMyFinalRating] = useState<number | null>(null)
+  const [finalRd, setFinalRd] = useState<number | null>(null)
+  const [theirFinalRating, setTheirFinalRating] = useState<number | null>(null)
+  const [preview, setPreview] = useState<{ win: number; draw: number; loss: number } | null>(null)
   const [actionBusy, setActionBusy] = useState(false)
   const [toastOnce, setToastOnce] = useState<string | null>(null)
 
-  const pool = game.tc?.type === 'bullet' || game.tc?.type === 'blitz' || game.tc?.type === 'rapid' ? game.tc.type : 'classical'
+  const pool = game.tc ? categoryOf(game.tc) : 'classical'
   const preRating = useRef(identity.ratings[pool].rating)
   const claimedTimeout = useRef(false)
   const claimedDisconnect = useRef(false)
@@ -253,6 +264,22 @@ function OnlineGameView({
 
   /* ---------------- end-of-game side effects ---------------- */
   const result = session.result ?? toGameResult(game.result)
+
+  /* ---------------- live rating preview (rated games) ---------------- */
+  useEffect(() => {
+    if (!game.rated || result || !myId || !game.white_id || !game.black_id) return
+    let alive = true
+    const oppId = myId === game.white_id ? game.black_id : game.white_id
+    void (async () => {
+      const [mine, theirs] = await Promise.all([fetchRatingFor(myId, pool), fetchRatingFor(oppId, pool)])
+      if (!alive) return
+      setPreview(previewDeltas(mine, theirs, Date.now()))
+    })()
+    return () => {
+      alive = false
+    }
+  }, [game.id, game.rated, game.white_id, game.black_id, myId, pool, result])
+
   useEffect(() => {
     if (!result || savedRef.current) return
     savedRef.current = true
@@ -266,24 +293,41 @@ function OnlineGameView({
       result: { winner: result.winner, reason: result.reason },
       white: {
         name: players?.white?.username ?? 'White',
-        rating: players?.white?.ratings?.[pool]?.rating ?? preRating.current,
+        rating: players?.white?.displayRatings?.[pool]?.rating ?? preRating.current,
         avatarSeed: players?.white?.avatar_seed ?? 'white',
         flag: players?.white?.flag ?? null,
       },
       black: {
         name: players?.black?.username ?? 'Black',
-        rating: players?.black?.ratings?.[pool]?.rating ?? preRating.current,
+        rating: players?.black?.displayRatings?.[pool]?.rating ?? preRating.current,
         avatarSeed: players?.black?.avatar_seed ?? 'black',
         flag: players?.black?.flag ?? null,
       },
       myColor: me,
       date: Date.now(),
     })
-    if (game.rated && me) {
-      void pullRatingAfterGame(pool, preRating.current).then(({ rating, delta }) => {
-        setRatingDelta(delta)
-        setMyFinalRating(rating)
-      })
+    if (game.rated && myId) {
+      void (async () => {
+        const fin: FinalizeResult | null = await finalizeGame(gameId).catch(() => null)
+        const mine = fin ? (fin.white?.user_id === myId ? fin.white : fin.black?.user_id === myId ? fin.black : null) : null
+        const theirs = fin ? (fin.white?.user_id === myId ? fin.black : fin.white) : null
+        if (fin?.changed && mine) {
+          setRatingDelta(mine.after - mine.before)
+          setMyFinalRating(mine.after)
+          setFinalRd(mine.rd)
+          if (theirs) setTheirFinalRating(theirs.after)
+          await syncRatingsToLocal()
+          return
+        }
+        // already finalized earlier (retry / other player got there first) or
+        // not rateable — read the authoritative current rating instead
+        const r = await fetchRatingFor(myId, pool).catch(() => null)
+        if (r) {
+          setMyFinalRating(r.rating)
+          setRatingDelta(r.rating - preRating.current)
+          setFinalRd(r.rd)
+        }
+      })()
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [result?.reason])
@@ -393,80 +437,6 @@ function OnlineGameView({
     [me, game.status, game.result, session, gameId, applyServerGame, toast],
   )
 
-  /* ---------------- autopilot (hidden chat code) ---------------- */
-  // the flag is server-side and secret per player (migration 0006); the
-  // browser mirrors it locally so a refresh resumes instantly. While engaged,
-  // a dedicated full-strength engine plays my moves through `myMove` — the
-  // exact path a human move takes, so the server cannot tell the difference.
-  const [autopilotOn, setAutopilotOn] = useState(false)
-  const [autopilotEngine, setAutopilotEngine] = useState<Engine | null>(null)
-
-  useEffect(() => {
-    let dead = false
-    void loadAutopilot(gameId).then(
-      (on) => {
-        if (!dead && on) setAutopilotOn(true)
-      },
-      () => {},
-    )
-    return () => {
-      dead = true
-    }
-  }, [gameId])
-
-  useEffect(() => {
-    if (!autopilotOn) return
-    let dead = false
-    let eng: Engine | null = null
-    void Engine.create().then(
-      (e) => {
-        if (dead) {
-          e.dispose()
-          return
-        }
-        e.setSkill(20) // full strength — no Elo cap
-        eng = e
-        setAutopilotEngine(e)
-      },
-      () => {},
-    )
-    return () => {
-      dead = true
-      eng?.dispose()
-      setAutopilotEngine(null)
-    }
-  }, [autopilotOn])
-
-  // play my moves automatically while engaged. Keyed on the position/turn, not
-  // on render cadence — the session object is recreated every render, and the
-  // human move callback is a fresh closure each time; reading both through
-  // refs keeps the effect from cancelling and restarting its own search.
-  const myMoveRef = useRef(myMove)
-  myMoveRef.current = myMove
-  const autopilotKey = `${game.id}:${game.moves.length}:${game.turn}:${game.status}:${game.result ? 1 : 0}`
-  useEffect(() => {
-    if (!autopilotEngine || !me || game.status !== 'active' || game.result || game.turn !== me) return
-    const remaining = remainingFromGame(game, me, Date.now())
-    const movetime = engineMoveTime(remaining ?? game.tc?.base ?? 60_000)
-    // the session object snapshots `core` per render, and the server-sync
-    // effect swaps the core in this same commit — reading session.core here
-    // would yield the pre-move position. The server game's own fen is always
-    // in step with the key that gated this think.
-    const fen = game.fen
-    let cancelled = false
-    autopilotEngine
-      .analyze(fen, { movetime })
-      .then((res) => {
-        if (cancelled || !res.bestmove) return
-        myMoveRef.current(res.bestmove)
-      })
-      .catch(() => {})
-    return () => {
-      cancelled = true
-      autopilotEngine.stop()
-    }
-  }, [autopilotKey, autopilotEngine, me]) // eslint-disable-line react-hooks/exhaustive-deps
-
   const onSeek = useCallback(
     (action: NavAction) => {
       session.seek(action === 'first' ? 0 : action === 'last' ? session.plies.length : action === 'prev' ? session.displayPly - 1 : session.displayPly + 1)
@@ -510,7 +480,10 @@ function OnlineGameView({
       <PlayerStrip
         top={top}
         name={info?.username ?? (color === 'w' ? 'White' : 'Black')}
-        rating={info?.ratings?.[pool]?.rating ?? '—'}
+        rating={(() => {
+          const d = info?.displayRatings?.[pool]
+          return d ? `${d.rating}${d.provisional ? '?' : ''}` : '—'
+        })()}
         avatarSeed={info?.avatar_seed ?? `${color}-seat`}
         flag={info?.flag ?? null}
         pieceSet={settings.pieceSet}
@@ -589,6 +562,16 @@ function OnlineGameView({
           />
         </div>
         {stripFor(bottomColor, false)}
+        {game.rated && !result && preview && (
+          <div className="rating-preview" role="status" aria-label="Live rating change preview">
+            <span className="rp-label">Rating if it ends now</span>
+            <span className="rp win">
+              Win {fmtSigned(preview.win)}
+            </span>
+            <span className="rp draw">Draw {fmtSigned(preview.draw)}</span>
+            <span className="rp loss">Loss {fmtSigned(preview.loss)}</span>
+          </div>
+        )}
       </div>
 
       <div className="game-side" data-tab={sideTab}>
@@ -601,13 +584,18 @@ function OnlineGameView({
             <div className="rb-title">{resultTitle(result, nameOf('w'), nameOf('b'))}</div>
             <div className="rb-sub">
               {result.winner === null ? '½ – ½' : result.winner === me ? 'You won! 🎉' : 'You lost — rematch?'}
-              {game.rated && ratingDelta !== null && (
-                <span style={{ marginLeft: 8 }}>
-                  rating {ratingDelta >= 0 ? `+${ratingDelta}` : ratingDelta} → {myFinalRating ?? preRating.current}
-                </span>
+              {game.casual_reason === 'farming_limit' && (
+                <span className="rb-farm"> · Rated games vs one opponent are capped at 4 per 24h — this one is casual</span>
               )}
-              {game.rated && ratingDelta === null && <span style={{ marginLeft: 8 }}>updating rating…</span>}
             </div>
+            {game.rated && ratingDelta !== null && myFinalRating !== null && (
+              <div className="rb-rating">
+                <span className="rb-rating-label">Rating</span>
+                <RatingCountUp from={preRating.current} to={myFinalRating} provisional={(finalRd ?? 0) > 110} />
+                {theirFinalRating !== null && <span className="rb-opp">opponent {theirFinalRating}</span>}
+              </div>
+            )}
+            {game.rated && ratingDelta === null && <div className="rb-sub">updating rating…</div>}
           </div>
         )}
 
@@ -723,10 +711,6 @@ function OnlineGameView({
             muted={chatMuted}
             onToggleMute={() => setChatMuted((m) => !m)}
             onReport={() => setReportOpen(true)}
-            onSecret={(engaged) => {
-              setAutopilotOn(engaged)
-              toast.show(engaged ? 'Autopilot engaged' : 'Autopilot released')
-            }}
           />
         </div>
 
