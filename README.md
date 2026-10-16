@@ -1,130 +1,146 @@
-# Chess Multiplayer
+# FreeChess
 
-Realtime multiplayer chess. Free-tier stack, no API keys to pay for.
+I wanted a chess site where my friends and I could start a game in two clicks —
+no signup wall, no ads, no engine locked behind a subscription. So this runs on
+free tiers end to end: a static Vite app on Netlify, a Supabase project for
+Postgres + Realtime + anonymous sign-ins, and Stockfish in the browser as a Web
+Worker. There is no API key anywhere in this repo that costs money.
 
-| Piece | Service | Notes |
-|---|---|---|
-| Frontend hosting | **Netlify** — https://chess-multiplayer-788.netlify.app | Static build (Vite). The name `chess-multiplayer` was taken, hence `-788`. |
-| Code + auto-deploy | **GitHub** — https://github.com/CodeByPartho/chess-multiplayer | Every push to `main` deploys. |
-| Realtime backend | **Supabase** — https://supabase.com/dashboard/project/vtyksxibpkstzjnjcyzs | Postgres + Realtime + anon guest sign-in + Edge Functions (project `chess-multiplayer`, Singapore). |
-| Chess rules | **chess.js** | Runs client-side. |
-| Engine | **Stockfish 19 WASM** (lite, single-threaded, 1.8 MB) | Runs in the player's browser as a Web Worker. No server cost. |
+- live site: https://chess-multiplayer-788.netlify.app
+- code: https://github.com/CodeByPartho/chess-multiplayer
+- backend: https://supabase.com/dashboard/project/vtyksxibpkstzjnjcyzs
+
+The `-788` is on the site name because `chess-multiplayer` was taken.
+
+## Quick start
+
+```bash
+npm install
+cp .env.example .env      # fill in your Supabase URL + anon key
+npm run dev
+```
+
+The app talks to whatever project `.env` points at, so don't point local
+experiments at production by accident. (My `.env` also has the database
+password in it — it belongs in a password manager; the file is git-ignored,
+but still.)
 
 ## How deploy works
 
-Push to `main` → GitHub Actions (`.github/workflows/deploy.yml`) → `npm ci` →
-`netlify deploy --prod`, which runs the `netlify.toml` build command and uploads `dist/`.
-The Supabase credentials are injected by Netlify from the **site environment variables**
-(dashboard → Site configuration → Environment variables), so they never live in GitHub.
+Push to `main` → GitHub Actions (`.github/workflows/deploy.yml`) runs `npm ci`
+and `netlify deploy --prod`, which builds through `netlify.toml` and uploads
+`dist/`. The Supabase credentials come from Netlify's site environment
+variables (dashboard → Site configuration → Environment variables), so they
+never live in GitHub.
 
-Local deploy without git: `netlify deploy --prod` (uses your logged-in CLI).
+Local deploy without git: `netlify deploy --prod` from my logged-in CLI.
 
-### DDoS / request-per-IP (optional owner action — Cloudflare)
+### DDoS / request-per-IP (owner action — Cloudflare)
 
-The honest story: Netlify applies platform-level abuse protection and per-plan edge
-rate limiting, but that is **not** a configurable per-IP WAF on the free plan. The
-app's real defense layer is Supabase RLS + per-user RPC rate limits (below), not the
-CDN. If you ever need real per-IP filtering or DDoS mitigation, put Cloudflare's free
-proxy in front of the site — dashboard work only, no code change:
+Honest version first: Netlify's free plan has platform-level abuse protection,
+but it is not a configurable per-IP WAF. The real defense here is Supabase RLS
+plus per-user rate limits inside the RPCs (see Security below), not the CDN.
+If real per-IP filtering is ever needed, the free-tier answer is Cloudflare in
+front of the site — all dashboard work, no code change:
 
-1. Create a free Cloudflare account and **add your own domain** (the
-   `*.netlify.app` address cannot be proxied — a custom domain on Netlify is a
-   prerequisite, e.g. `chess.example.com`).
-2. Point the domain's nameservers at the pair Cloudflare shows.
-3. In Netlify: Domain management → add that custom domain → set it as the primary
-   address (keep the netlify.app address as an alias).
-4. In Cloudflare DNS, make sure the record for the domain is **Proxied** (orange
-   cloud) — that is what activates Cloudflare's DDoS mitigation and WAF.
-5. Optional hardening in Cloudflare: Security → Bot Fight Mode (free), Security
-   Level Medium, and a rate-limiting rule on `/login*` if sign-up abuse appears.
-6. Nothing else changes: Netlify still serves the app behind the proxy, and the
-   security headers below pass through untouched.
+1. Make a free Cloudflare account and add a domain I own — the `*.netlify.app`
+   address can't be proxied, so a custom domain on Netlify comes first.
+2. Point that domain's nameservers at the pair Cloudflare shows.
+3. In Netlify: Domain management → add the custom domain → set it as primary
+   (the netlify.app address stays as an alias).
+4. In Cloudflare DNS, make sure the record is **Proxied** (orange cloud) —
+   that's what switches on DDoS mitigation and the WAF.
+5. Optional: Security → Bot Fight Mode (free), Security Level Medium, and a
+   rate-limit rule on `/login*` if sign-up abuse ever shows up.
+6. Nothing else changes: Netlify still serves the app, and the security
+   headers below pass through untouched.
 
 ## Environment
 
-- **Local dev**: copy `.env.example` to `.env` and fill in the values (already done on the
-  setup machine — `.env` also records the database password; move it to a password manager).
-- **CI/production**: `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` are set on the Netlify
-  site itself. The anon key is public by design (it ships in the browser bundle); security
-  comes from Supabase Row Level Security policies.
-- **Optional**: `VITE_TURNSTILE_SITE_KEY` (Cloudflare Turnstile, set on Netlify) enables the
-  sign-up captcha; the CSP in `netlify.toml` already allows the Turnstile script + iframe.
+`VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` are all the frontend needs.
+Locally they live in `.env`; in production they're set on the Netlify site.
+The anon key is public by design (it ships in the bundle) — the security model
+is Row Level Security, not hiding the key.
+
+`VITE_TURNSTILE_SITE_KEY` (Cloudflare Turnstile) is optional. Set it on
+Netlify to turn the sign-up captcha on; the CSP already allows the Turnstile
+script and iframe either way.
 
 ## Security
 
-### Response headers (`netlify.toml`)
+### Response headers
 
-Every response ships `Strict-Transport-Security`, `X-Content-Type-Options: nosniff`,
-`X-Frame-Options: DENY`, `Referrer-Policy: strict-origin-when-cross-origin`,
-`Permissions-Policy` (camera / microphone / geolocation / payment / usb all off),
-`Cross-Origin-Opener-Policy: same-origin`, and an enforcing Content-Security-Policy:
+`netlify.toml` sets these on every response: HSTS,
+`X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`,
+`Referrer-Policy: strict-origin-when-cross-origin`, a `Permissions-Policy`
+that turns off camera / microphone / geolocation / payment / usb,
+`Cross-Origin-Opener-Policy: same-origin`, and an enforcing CSP:
 
-- `default-src 'self'` — everything is opt-in.
-- `script-src 'self' 'wasm-unsafe-eval' https://challenges.cloudflare.com` — the
-  Stockfish engine compiles WASM in the browser; Turnstile loads its widget script.
-- `style-src 'self' 'unsafe-inline'` — React inline styles.
-- `img-src 'self' data: blob: https://*.supabase.co` — identicons are `data:` URLs,
-  upload previews `blob:`, avatars come from Supabase Storage.
+- `default-src 'self'` — everything else is opt-in
+- `script-src 'self' 'wasm-unsafe-eval' https://challenges.cloudflare.com` —
+  Stockfish compiles WASM in the browser; Turnstile loads its widget script
+- `style-src 'self' 'unsafe-inline'` — React inline styles
+- `img-src 'self' data: blob: https://*.supabase.co` — identicons are `data:`
+  URLs, upload previews are `blob:`, avatars come from Storage
 - `connect-src 'self' https://*.supabase.co wss://*.supabase.co
-  https://challenges.cloudflare.com` — REST + Realtime (+ Turnstile verification).
-- `frame-src https://challenges.cloudflare.com`, `worker-src 'self' blob:`,
-  `object-src 'none'`, `base-uri 'self'`, `form-action 'self'`,
-  `frame-ancestors 'none'`.
+  https://challenges.cloudflare.com` — REST + Realtime
+- `frame-src` only Cloudflare; `worker-src 'self' blob:`; `object-src 'none'`;
+  `base-uri 'self'`; `form-action 'self'`; `frame-ancestors 'none'`
 
-The CSP was first shipped as `Content-Security-Policy-Report-Only` and only made
-enforcing after a production build was served with these exact headers and walked
-through the real flows — home boot, a move against the computer (proving the worker +
-WASM compile under it), the matchmaking queue with Realtime, puzzles, and the sign-in
-screen incl. Turnstile — with zero CSP violations. If a future change gets blocked,
-read the violation in the browser console, fix the source, and never add
-`'unsafe-inline'` to `script-src`.
+I shipped the CSP as report-only first and only flipped it to enforcing after
+serving a production build with these exact headers and walking the real
+flows against it — home, an engine move against the computer (worker + WASM),
+the matchmaking queue with Realtime, puzzles, and sign-in with Turnstile — with
+zero violations. If a future change gets blocked, the browser console names
+the exact directive; fix the source instead of adding `'unsafe-inline'` to
+`script-src`.
 
-### Server-side rate limits
+### Rate limits
 
-Hot RPCs carry per-user ceilings enforced in Postgres itself (`rate_limits` table +
-`public.rate_check()`, migration 0019) — a script cannot bypass the client-side pacing:
+Every hot RPC carries a per-user ceiling in Postgres itself (`rate_limits`
+table + `public.rate_check()`, migration 0019), so nothing depends on
+client-side pacing:
 
-| RPC / path | Ceiling |
+| call | ceiling |
 |---|---|
 | `queue_match` | 60 / min |
-| `sync_guest` | 30 / min (silent skip — identity heartbeats) |
-| `touch_guest` | 60 / min (silent skip) |
+| `sync_guest` | 30 / min — silent skip (identity heartbeats) |
+| `touch_guest` | 60 / min — silent skip |
 | `check_username` | 120 / min |
-| `update_username` | 10 / h **and** 5 / day |
+| `update_username` | 10 / h and 5 / day |
 | `claim_username` | 10 / h |
-| report (edge function) | 5 / h |
-| `record_puzzle_result` | 30 / min + daily cap (already server-side since 0013) |
+| report edge function | 5 / h |
+| `record_puzzle_result` | 30 / min + a daily cap (server-side since 0013) |
 
-Counters are readable only by their owner; only SECURITY DEFINER code and the service
-role may write them. Reports have exactly one writer: the edge function checks that
-the game exists, that the caller played it, and that the target is the opponent — the
-old client-side insert policy was dropped entirely.
+Counters are readable only by their owner, and only SECURITY DEFINER code and
+the service role can write them. Reports have exactly one writer: the report
+edge function checks that the game exists, that the caller played it, and that
+the target is the opponent. The old client-side insert path was dropped.
 
-### Avatars (Storage)
+### Avatars
 
-The public-read `avatars` bucket accepts writes only into `avatars/<your-uid>/...`
-(insert/update/delete policies check the folder owner), with a 1 MB size cap and a
-JPEG/WebP/PNG mime allowlist. The client downscales every image to a 256×256
-center-crop before uploading, so what land are small files; `profiles.avatar_path`
-only ever stores paths matching your uid.
+The `avatars` storage bucket is public-read, but writes must land under
+`avatars/<your-uid>/...` — the insert/update/delete policies check the folder
+owner. 1 MB cap, JPEG/WebP/PNG only. The client center-crops and downscales
+every image to 256×256 before upload, and `profiles.avatar_path` only ever
+stores a path matching your own uid.
 
-### Auth (dashboard settings, owner)
+### Auth dashboard settings to keep an eye on
 
-Rate limits and bot checks for sign-in itself live in the Supabase dashboard:
-Authentication → **Rate Limits** (keep the built-ins on; the anonymous-sign-in cap is
-the one that matters for guests) and Authentication → **Settings** for manual
-linking / Turnstile. Deny-by-default applies everywhere else: no client role can
-write ratings, results, histories, reports or rate-limit counters directly, and
+Sign-in rate limits and bot checks live in the Supabase dashboard:
+Authentication → **Rate Limits** (the anonymous-sign-in cap is the one that
+matters for guests) and Authentication → **Settings** (manual linking,
+Turnstile). Everything else is deny-by-default: no client role can write
+ratings, results, histories, reports or rate-limit counters directly, and
 `EXECUTE` is granted to `authenticated` only for the allowlisted RPCs.
 
 ### Chat
 
-In-game chat is a Supabase Realtime **broadcast** channel — nothing is ever stored.
-The client paces sends (650 ms minimum gap, 6 messages / 10 s burst), filters
-profanity, caps message length at 300 chars, and validates + bounds every *received*
-payload before rendering it as plain text. Supabase caps per-connection message rate
-at the platform level; there is no server-side database to sanitize because nothing
-is persisted.
+In-game chat is a Realtime broadcast channel — nothing is ever stored, so
+there is no server-side database to sanitize. The client paces sends (650 ms
+minimum gap, 6 per 10 s), filters profanity, caps messages at 300 characters,
+and bounds every *received* payload before rendering it as plain text.
+Supabase caps per-connection message rate at the platform level.
 
 ## Testing
 
@@ -137,9 +153,9 @@ is persisted.
 
 ### Running the e2e suite without touching production
 
-The e2e specs create anonymous users, games, lobby rows and rating rows, so they
-only run against a dedicated test backend, selected by **TEST-only** values
-(`.env.test`, git-ignored — copy `.env.test.example`):
+The e2e specs create anonymous users, games, lobby rows and rating rows, so
+they only run against a dedicated test backend, selected by **TEST-only**
+values (`.env.test`, git-ignored — copy `.env.test.example`):
 
 ```
 FC_TEST_SUPABASE_URL=https://<test-ref>.supabase.co
@@ -152,13 +168,15 @@ FC_TEST_SERVICE_KEY=<service_role key>        # alternative to FC_TEST_DB_URL
   `e2e/global-setup.ts`): if nothing is configured, or any value references the
   production ref `vtyksxibpkstzjnjcyzs`, the run refuses to start. There is no
   fallback to `.env`.
-- **The app under test is served with the test project's public URL + anon key**
-  (the dev server gets those as real environment variables, which win over `.env`),
-  and the server is never reused across runs.
-- **Cleanup**: `e2e/global-teardown.ts` deletes everything the run created in the
-  test backend (users, guests, games, lobby rows, ratings/rating-history, profiles,
-  puzzle results, reports) and prints the counts. It refuses to run if the backend
-  changed between setup and teardown.
+- The app under test is served with the test project's public URL + anon key
+  (real environment variables win over `.env`), and the dev server is never
+  reused across runs.
+- **Cleanup**: `e2e/global-teardown.ts` deletes everything the run created in
+  the test backend (users, guests, games, lobby rows, ratings/rating-history,
+  profiles, puzzle results, reports, uploaded avatars — the last one through
+  the Storage API, since hosted projects block direct SQL writes to storage
+  tables) and prints the counts. It refuses to run if the backend changed
+  between setup and teardown.
 - `e2e/flow-test-backend.spec.ts` asserts the page really is bound to the test
   project ref and that no production session key exists.
 
@@ -173,8 +191,9 @@ supabase functions deploy game-create game-join game-action report --project-ref
 
 ## Backups
 
-`FC_DB_URL` is always **your own** connection string; it is only exported into the
-child process environment, so the password never appears in process listings.
+`FC_DB_URL` is always **your own** connection string; it is only exported into
+the child process environment, so the password never shows up in process
+listings.
 
 ```bash
 # one-command dump → backups/fc-backup-<UTC timestamp>.dump (git-ignored)
@@ -188,10 +207,10 @@ FC_DB_URL="..." npm run db:backup -- --with-auth
 npm run db:restore -- backups/fc-backup-<…>.dump --list
 ```
 
-Requires the PostgreSQL client tools (`pg_dump`/`pg_restore`) — the script finds
-them on `PATH` or in the usual install locations, or you can point at one with
-`PG_DUMP=` / `PG_RESTORE=`. Install with `winget install PostgreSQL.PostgreSQL.17`
-(Windows), `brew install libpq` (macOS) or `apt-get install postgresql-client-17`.
+Needs the PostgreSQL client tools (`pg_dump`/`pg_restore`). The script looks on
+`PATH` and the usual install locations, or point at them with `PG_DUMP=` /
+`PG_RESTORE=`. Install: `winget install PostgreSQL.PostgreSQL.17` (Windows),
+`brew install libpq` (macOS), `apt-get install postgresql-client-17` (Debian/Ubuntu).
 
 ### Restoring
 
@@ -205,54 +224,62 @@ FC_DB_URL="postgresql://…/<target>" npm run db:restore -- backups/<file>.dump 
 
 - `--yes` is required: `pg_restore --clean --if-exists` drops and recreates the
   objects contained in the dump.
-- Restore into a **Supabase** project (or any database that already has the `auth`
-  schema and `auth.uid()`): the app tables reference `auth.users`, and the RLS
-  policies call `auth.uid()`. A vanilla Postgres target needs `create schema auth;`
-  plus a minimal `auth.users`/`auth.uid()` first.
-- The default dump covers the `public` schema — tables, RLS policies, functions and
-  data. Accounts live in `auth` (`--with-auth`); restore those only into an empty
+- Restore into a **Supabase** project (or any database that already has the
+  `auth` schema and `auth.uid()`): the app tables reference `auth.users`, and
+  the RLS policies call `auth.uid()`. A vanilla Postgres target needs
+  `create schema auth;` plus a minimal `auth.users`/`auth.uid()` first.
+- The default dump covers `public` — tables, RLS policies, functions and data.
+  Accounts live in `auth` (`--with-auth`); only restore those into an empty
   database, since the rows are GoTrue's own.
-- A verified rehearsal (scratch cluster, empty target + auth stub): 0 restore
-  errors, 15 functions, 14 policies, and pre-dump rows present afterwards.
+- The rehearsal I ran (scratch cluster, empty target + auth stub): 0 restore
+  errors, 15 functions, 14 policies, and the pre-dump rows present afterwards.
 
 ## Keeping the free project awake
 
 `.github/workflows/keep-alive.yml` sends one read-only request every 3 days (a
-site GET plus a `SELECT` through the data API) so the free Supabase project is not
-paused for inactivity. Add these in **Settings → Secrets and variables → Actions**
-(nothing secret is hardcoded in the workflow):
+site GET plus a `SELECT` through the data API) so the free Supabase project
+isn't paused for inactivity. Add these in **Settings → Secrets and variables →
+Actions** (nothing secret is hardcoded in the workflow):
 
-| Name | Value |
+| secret | value |
 |---|---|
 | `FC_PROD_SUPABASE_URL` | `https://<ref>.supabase.co` |
 | `FC_PROD_SUPABASE_ANON_KEY` | the public anon key |
 | `FC_PROD_SITE_URL` (optional) | defaults to `https://chess-multiplayer-788.netlify.app` |
 
-It can also be triggered by hand from the Actions tab (useful after GitHub
-disables schedules for a repo that has been idle for 60 days).
+It can also be run by hand from the Actions tab — useful after GitHub disables
+schedules for a repo that's been idle for 60 days.
 
 ## Engine
 
-`npm run engine:sync` copies `stockfish-19-lite-single.{js,wasm}` from `node_modules/stockfish`
-into `public/engine/` (runs automatically before every build). `src/engine.js` wraps the worker
-in a small UCI API: `createEngine()` → `engine.analyze(fen, depth)` → `{ bestmove }`.
+`npm run engine:sync` copies `stockfish-19-lite-single.{js,wasm}` from
+`node_modules/stockfish` into `public/engine/` (runs automatically before every
+build). `src/engine/engine.ts` wraps the worker in a small UCI API:
+`createEngine()` then `engine.analyze(fen, depth)`.
 
-## Project layout
+## What's where
 
 ```
-src/main.js        app entry — Supabase client, game instance, status line
-src/engine.js      Stockfish worker wrapper (UCI)
-scripts/sync-stockfish.mjs   copies the engine build into public/
-supabase/          CLI project config (supabase link --project-ref vtyksxibpkstzjnjcyzs)
-.github/workflows/deploy.yml the auto-deploy pipeline
+src/main.tsx          entry point
+src/App.tsx           shell, routes, nav
+src/pages/            one file per route
+src/net/              supabase client + every server call
+src/lib/              identity, settings, avatars, small helpers
+src/board/            board rendering + interaction
+src/engine/           stockfish wrapper
+supabase/migrations/  the database, in order (0019 is current)
+supabase/functions/   edge functions (game-create/join/action, report)
+e2e/                  playwright specs — test backend only, never prod
+scripts/              engine sync, generators, db backup/restore
 ```
 
 ## Notes
 
-- Free-tier limits: Netlify (100 GB bandwidth/mo), Supabase (500 MB DB). Supabase pauses a
-  free project after ~1 week without activity — the keep-alive workflow above prevents that;
-  if it does pause, restore it from the dashboard (and re-run the workflow afterwards).
-- The site's `chess-multiplayer-788.netlify.app` address works immediately; a custom domain
-  costs extra. To switch the slug, rename the site in Netlify settings.
-- Moving the Git integration to Netlify's native GitHub integration (for deploy previews)
-  is optional — Settings → Build & deploy → Link repository in the Netlify UI.
+- Free-tier limits: Netlify (100 GB bandwidth/mo), Supabase (500 MB DB).
+  Supabase pauses a free project after ~1 week of inactivity — the keep-alive
+  workflow prevents that; if it does pause, unpause it from the dashboard and
+  re-run the workflow.
+- `chess-multiplayer-788.netlify.app` works as-is; a custom domain costs extra.
+  To change the slug, rename the site in Netlify.
+- Moving the Git integration to Netlify's native GitHub integration (for deploy
+  previews) is optional: Settings → Build & deploy → Link repository.
