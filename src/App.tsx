@@ -244,7 +244,7 @@ function AccountChip() {
         onClick={() => setMenu((m) => !m)}
         title="Account menu"
       >
-        <Avatar seed={profile?.avatar_seed ?? identity.avatarSeed} size={22} />
+        <Avatar seed={profile?.avatar_seed ?? identity.avatarSeed} path={profile?.avatar_path} name={profile?.username ?? identity.username} size={22} />
         <span>{profile?.username ?? 'Set username'}</span>
         {rapid !== null && <span className="rating">{rapid}</span>}
       </button>
