@@ -2,9 +2,9 @@
  * Server-integration tests: the SQL rating stack against a TEST database.
  *
  *   * Function inventory — the public schema contains exactly the expected
- *     functions (the 0011 diagnostic probe and every autopilot remnant must
- *     be gone), every function has a pinned search_path, and nothing is
- *     executable by anon or PUBLIC.
+ *     functions (the 0011 diagnostic probe must be gone; the 0017 hidden
+ *     autopilot RPC is expected), every function has a pinned search_path,
+ *     and nothing is executable by anon or PUBLIC.
  *   * Glicko-2 parity — glicko200_update() must produce the same numbers
  *     as the shared TypeScript implementation the client previews with.
  *   * Idempotent finalization — a game is rated exactly once, ever.
@@ -50,6 +50,7 @@ const ALLOWED_FUNCTIONS = [
   'check_username(text)',
   'claim_username(text,text,text)',
   'delete_my_account()',
+  'enable_autopilot(uuid,text)',
   'finalize_game(uuid)',
   'glicko200_update(integer,integer,numeric,timestamp with time zone,integer,integer,numeric,bigint,timestamp with time zone)',
   'leaderboard(text,integer,integer)',
@@ -68,6 +69,7 @@ const CLIENT_RPC_FUNCTIONS = [
   'check_username',
   'claim_username',
   'delete_my_account',
+  'enable_autopilot',
   'finalize_game',
   'leaderboard',
   'puzzle_leaderboard',
@@ -196,9 +198,10 @@ describe.skipIf(!RUN)('server rating stack (TEST database — never production)'
        where n.nspname = 'public'
        order by 1`)
 
-    // exact set: no diagnostic probe, no autopilot, nothing unexpected
+    // exact set: no diagnostic probe, nothing unexpected (the hidden
+    // autopilot RPC is the expected 0017 feature)
     expect(rows.map((r) => r.sig)).toEqual(ALLOWED_FUNCTIONS)
-    expect(rows.some((r) => /probe|autopilot|sync_puzzle/i.test(r.sig))).toBe(false)
+    expect(rows.some((r) => /probe|sync_puzzle/i.test(r.sig))).toBe(false)
 
     for (const r of rows) {
       expect(r.cfg, `${r.proname} must have a pinned search_path`).toContain('search_path')
@@ -212,7 +215,7 @@ describe.skipIf(!RUN)('server rating stack (TEST database — never production)'
     expect(withAuth).toEqual([...CLIENT_RPC_FUNCTIONS].sort())
 
     // SECURITY DEFINER everywhere it matters + search_path pinned to public
-    for (const r of rows.filter((r) => ['finalize_game', 'record_puzzle_result', 'queue_match', 'sync_guest'].includes(r.proname))) {
+    for (const r of rows.filter((r) => ['enable_autopilot', 'finalize_game', 'record_puzzle_result', 'queue_match', 'sync_guest'].includes(r.proname))) {
       expect(r.secdef, `${r.proname} must be SECURITY DEFINER`).toBe(true)
       expect(r.cfg).toContain('search_path=public')
     }
