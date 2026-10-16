@@ -10,7 +10,7 @@ export function AuthModal({
   onClose: () => void
 }) {
   return (
-    <Modal title="Sign in" onClose={onClose} labelledBy="auth-modal-title">
+    <Modal title="Account" onClose={onClose} labelledBy="auth-modal-title">
       <AuthPanel purpose={purpose} onDone={onClose} />
       <div className="modal-actions">
         <button className="btn btn-ghost" onClick={onClose}>

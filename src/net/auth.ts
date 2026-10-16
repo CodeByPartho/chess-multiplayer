@@ -2,12 +2,15 @@
  * Authentication: guests first, then optional sign-up.
  *
  *  * anonymous sessions keep playing as before (guest-first),
+ *  * creating an account from a guest is an upgrade of the same user
+ *    (updateUser with email + password) — the id never changes, so the
+ *    rating and games carry over; no identity linking involved,
  *  * Google / Discord / GitHub sign in through PKCE: a popup for signing in
- *    to an existing account, and a same-tab redirect when upgrading the
- *    current guest (the link must keep this session's user),
- *  * passwordless email: an OTP sign-in for accounts, and the anonymous-user
- *    email upgrade (updateUser + email_change OTP) which keeps the guest's
- *    rating and games because the user id never changes.
+ *    to an existing account, and linkIdentity when a guest wants to attach
+ *    a provider (that one needs "manual linking" enabled server-side),
+ *  * signing in to an EXISTING account always clears the guest session
+ *    first — otherwise GoTrue tries to link the two users together and
+ *    refuses with "Manual linking is disabled".
  *
  * Nothing here ever writes ratings or results — that lives in the database.
  */
@@ -68,7 +71,7 @@ function callbackUrl(next: string): string {
 export interface StartResult {
   ok: boolean
   error?: string
-  /** 'already_exists' — the provider account belongs to a different user */
+  /** 'already_exists': provider belongs to a different user — 'linking_disabled': manual linking is off server-side */
   code?: string
 }
 
@@ -88,6 +91,9 @@ export async function startProviderRedirect(
       ? await supabase.auth.linkIdentity({ provider, options })
       : await supabase.auth.signInWithOAuth({ provider, options })
     if (error) {
+      if (/manual linking/i.test(error.message)) {
+        return { ok: false, code: 'linking_disabled', error: error.message }
+      }
       const already = /already|linked/i.test(error.message)
       return { ok: false, error: error.message, code: already ? 'already_exists' : undefined }
     }
@@ -138,6 +144,23 @@ export function startProviderPopup(provider: OAuthProvider, next?: string): Prom
   })()
 }
 
+/**
+ * Drop a guest session before signing in to a different account.
+ *
+ * GoTrue links identities when a call arrives with an active anonymous
+ * session, and that is exactly what a deployment without "manual linking"
+ * refuses. Clearing the guest first makes every sign-in path a plain
+ * sign-in again. Only ever touches anonymous sessions — a real account
+ * stays signed in.
+ */
+export async function clearGuestSession(): Promise<void> {
+  if (!onlineEnabled) return
+  const { data } = await supabase.auth.getSession()
+  if (data.session?.user.is_anonymous) {
+    await supabase.auth.signOut({ scope: 'local' })
+  }
+}
+
 /** passwordless email sign-in (creates the account when needed) */
 export async function sendEmailOtp(email: string, captchaToken?: string): Promise<StartResult> {
   if (!onlineEnabled) return { ok: false, error: 'Online play is not configured' }
@@ -154,13 +177,29 @@ export async function verifyEmailOtp(email: string, token: string): Promise<Star
   return error ? { ok: false, error: error.message } : { ok: true }
 }
 
-/**
- * Upgrade the current guest by adding an email — same user id, so the
- * rating, games and history carry over untouched.
- */
-export async function upgradeGuestEmail(email: string): Promise<StartResult> {
-  const { error } = await supabase.auth.updateUser({ email })
+/** email + password sign-in for accounts that set one */
+export async function signInPassword(email: string, password: string): Promise<StartResult> {
+  if (!onlineEnabled) return { ok: false, error: 'Online play is not configured' }
+  const { error } = await supabase.auth.signInWithPassword({ email, password })
   return error ? { ok: false, error: error.message } : { ok: true }
+}
+
+export interface CreateAccountResult extends StartResult {
+  /** true when the email change still needs the emailed code */
+  needsCode?: boolean
+}
+
+/**
+ * Turn the current guest into an account: email + password on the same
+ * user id, so rating, games and history carry over untouched. With email
+ * confirmations off the email applies at once; otherwise GoTrue sends an
+ * email_change code and we wait for it.
+ */
+export async function createAccountWithEmail(email: string, password: string): Promise<CreateAccountResult> {
+  const { data, error } = await supabase.auth.updateUser({ email, password })
+  if (error) return { ok: false, error: error.message }
+  const applied = (data.user?.email ?? '').toLowerCase() === email.toLowerCase()
+  return { ok: true, needsCode: !applied }
 }
 
 /** confirm the email-upgrade code (email_change OTP) */

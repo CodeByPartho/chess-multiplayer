@@ -757,6 +757,12 @@ html[data-appearance='light'] .clock.active { background: #2b2926; color: #f2efe
 
 /* auth panel (modal + /login) */
 .auth-card { width: min(420px, calc(100vw - 32px)); padding: 26px 24px; display: flex; flex-direction: column; align-items: center; gap: 6px; }
+.auth-tabs { display: flex; gap: 4px; margin-top: 10px; background: var(--panel-2); border: 1px solid var(--border); border-radius: var(--radius); padding: 3px; }
+.auth-tab {
+  flex: 1; border: none; background: none; color: var(--text-dim); font: inherit;
+  font-weight: 600; font-size: 13.5px; padding: 7px 12px; border-radius: var(--radius-sm); cursor: pointer;
+}
+.auth-tab.active { background: var(--panel-3); color: var(--text); }
 .auth-panel { display: flex; flex-direction: column; gap: 7px; min-width: min(330px, 76vw); text-align: left; }
 .auth-sub { font-size: 16.5px; font-weight: 700; margin: 2px 0 0; }
 .auth-note { font-size: 13px; color: var(--text-dim); margin: 0; line-height: 1.45; }
