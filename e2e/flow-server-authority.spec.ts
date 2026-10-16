@@ -1,16 +1,18 @@
 import { test, expect } from '@playwright/test'
-import { readFileSync } from 'node:fs'
+import { TEST_BACKEND } from './test-backend'
 
 /**
  * Ratings are server-authoritative: the browser cannot forge them through
  * the data API. The anon key (which is public by design) can READ ratings,
  * but writes are rejected and the rating RPCs are not executable by the
  * signed-out role at all.
+ *
+ * Runs against the e2e TEST backend (never production) — the guard in
+ * playwright.config.ts already refused any other target.
  */
 
-const env = readFileSync(new URL('../.env', import.meta.url), 'utf8')
-const SB_URL = /VITE_SUPABASE_URL=(.+)/.exec(env)?.[1]?.trim() ?? ''
-const SB_KEY = /VITE_SUPABASE_ANON_KEY=(.+)/.exec(env)?.[1]?.trim() ?? ''
+const SB_URL = TEST_BACKEND.supabaseUrl
+const SB_KEY = TEST_BACKEND.anonKey
 
 test.describe('server-side rating authority', () => {
   test.skip(!SB_URL || !SB_KEY, 'Supabase env not configured')

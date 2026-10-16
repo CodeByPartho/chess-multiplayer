@@ -2,7 +2,6 @@ import { expect, test } from '@playwright/test'
 import {
   VIEWPORTS,
   flipBoard,
-  gotoPath,
   layoutState,
   startAnalysis,
   startPassPlay,

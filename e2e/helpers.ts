@@ -117,7 +117,9 @@ export async function startComputer(page: Page, color: 'w' | 'b') {
   })
   await page.evaluate((c) => {
     const label = c === 'w' ? 'White' : 'Black'
-    const btn = [...document.querySelectorAll('.seg button')].find((b) => (b.textContent || '').includes(label))
+    const btn = [...document.querySelectorAll<HTMLElement>('.seg button')].find((b) =>
+      (b.textContent || '').includes(label),
+    )
     btn?.click()
   }, color)
   await page.evaluate(() => {
@@ -185,7 +187,7 @@ export async function playUci(page: Page, uci: string) {
         prev,
         { timeout: 8_000 },
       )
-      .then((h) => h.jsonValue<string>())
+      .then((h) => h.jsonValue() as Promise<string>)
       .catch(() => 'timeout')
     if (outcome === 'moved') return
     if (outcome === 'promo') {
@@ -265,7 +267,7 @@ export async function playRandomLegalMove(page: Page): Promise<boolean> {
         prev,
         { timeout: 4_000 },
       )
-      .then((h) => h.jsonValue<string>())
+      .then((h) => h.jsonValue() as Promise<string>)
       .catch(() => 'timeout')
     if (outcome === 'promo') {
       await page.locator('.promo button[aria-label="Promote to q"]').click()
@@ -468,15 +470,13 @@ export function expectScrollUnchanged(after: ScrollState, before: ScrollState) {
 /* Misc fixtures                                                        */
 /* ------------------------------------------------------------------ */
 
-/** true when .env carries the Supabase URL + anon key (online tests need it) */
-export function supabaseConfigured(): boolean {
-  try {
-    const env = readFileSync(new URL('../.env', import.meta.url), 'utf8')
-    return /VITE_SUPABASE_URL=\S/.test(env) && /VITE_SUPABASE_ANON_KEY=\S/.test(env)
-  } catch {
-    return false
-  }
-}
+/**
+ * true when a TEST Supabase backend is configured (online tests need it).
+ *
+ * Never reads `.env` — that file points at production, and the e2e suite must
+ * not touch it. See ./test-backend.ts and the guard in playwright.config.ts.
+ */
+export { supabaseConfigured } from './test-backend'
 
 /** build a finished GameRecord for the review page (20-move line, white won) */
 export function buildReviewRecord(id: string) {
