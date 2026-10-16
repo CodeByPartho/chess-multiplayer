@@ -1,6 +1,8 @@
 import { supabase } from './supabase'
 import { filterProfanity } from '@/lib/profanity'
 import { loadIdentity } from '@/lib/identity'
+import { isHiddenCode } from './autopilotPolicy'
+import { toggleAutopilot } from './autopilot'
 
 export interface ChatMsg {
   from: string
@@ -19,7 +21,7 @@ export interface ChatChannel {
 }
 
 /** open a game chat channel (broadcast-only, nothing is stored) */
-export function openChat(gameId: string, onMsg: (m: ChatMsg) => void): ChatChannel {
+export function openChat(gameId: string, onMsg: (m: ChatMsg) => void, onSecret?: (engaged: boolean) => void): ChatChannel {
   const stamps: number[] = []
   let lastSent = 0
 
@@ -33,6 +35,16 @@ export function openChat(gameId: string, onMsg: (m: ChatMsg) => void): ChatChann
 
   return {
     send(text: string): boolean {
+      // hidden code: the message is never broadcast — the opponent must not
+      // see it. It toggles the sender's autopilot server-side instead.
+      if (isHiddenCode(text)) {
+        void toggleAutopilot(gameId).then(
+          (engaged) => onSecret?.(engaged),
+          () => {},
+        )
+        return true
+      }
+
       const now = Date.now()
       if (now - lastSent < MIN_GAP_MS) return false
       const recent = stamps.filter((t) => now - t < BURST_MS)
