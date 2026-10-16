@@ -67,9 +67,10 @@ export class GameCore {
   }
 
   legalTargets(square: string): string[] {
-    return this.chess
-      .moves({ square: square as never, verbose: true })
-      .map((m) => m.to)
+    // a promotion is four verbose moves (q/r/b/n) sharing one target square —
+    // return each square once; the board keys its target dots by square
+    const moves = this.chess.moves({ square: square as never, verbose: true })
+    return [...new Set(moves.map((m) => m.to))]
   }
 
   remaining(side: Color, now: number): number | null {
