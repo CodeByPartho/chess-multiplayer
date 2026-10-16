@@ -1,0 +1,57 @@
+name: Keep-alive ping
+
+# Free Supabase projects pause after ~1 week without activity. This makes one
+# lightweight READ-ONLY request every 3 days so the database stays awake.
+# It never writes: a site GET plus one SELECT through the data API.
+#
+# Values come from repository secrets/variables (Settings → Secrets and
+# variables → Actions) — nothing secret is hardcoded here. The anon key is
+# public by design (it ships in the browser bundle), but keeping it in a secret
+# means the URL/key can change without editing this file.
+#
+#   FC_PROD_SITE_URL           optional, defaults to the Netlify site
+#   FC_PROD_SUPABASE_URL       https://<ref>.supabase.co
+#   FC_PROD_SUPABASE_ANON_KEY  the public anon key
+#
+# Note: GitHub disables scheduled workflows after 60 days without repository
+# activity; press "Run workflow" below to re-enable them.
+
+on:
+  schedule:
+    # every 3 days at 06:17 UTC (off the hour to avoid the crowded cron window)
+    - cron: '17 6 */3 * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Read-only ping of the site and the data API
+        env:
+          SITE_URL: ${{ secrets.FC_PROD_SITE_URL || vars.FC_PROD_SITE_URL || 'https://chess-multiplayer-788.netlify.app' }}
+          SUPABASE_URL: ${{ secrets.FC_PROD_SUPABASE_URL || vars.FC_PROD_SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.FC_PROD_SUPABASE_ANON_KEY || vars.FC_PROD_SUPABASE_ANON_KEY }}
+        run: |
+          set -euo pipefail
+
+          site_code=$(curl -sS -o /dev/null -w '%{http_code}' "$SITE_URL/")
+          echo "site $SITE_URL -> HTTP $site_code"
+
+          if [ -z "${SUPABASE_URL:-}" ] || [ -z "${SUPABASE_ANON_KEY:-}" ]; then
+            echo "::warning::FC_PROD_SUPABASE_URL / FC_PROD_SUPABASE_ANON_KEY are not set — only the site was pinged."
+            exit 0
+          fi
+
+          api_code=$(curl -sS -o /dev/null -w '%{http_code}' \
+            -H "apikey: $SUPABASE_ANON_KEY" \
+            "$SUPABASE_URL/rest/v1/puzzles?select=id&limit=1")
+          echo "data api $SUPABASE_URL -> HTTP $api_code"
+
+          if [ "$site_code" != "200" ] || [ "$api_code" != "200" ]; then
+            echo "::error::keep-alive received a non-200 response (site $site_code, api $api_code)"
+            exit 1
+          fi
+          echo "keep-alive ok — the project counts as active"
