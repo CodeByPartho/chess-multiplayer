@@ -97,16 +97,31 @@ export class Engine {
     return () => this.onLineHandlers.delete(cb)
   }
 
-  setSkill(level: number): void {
+  /**
+   * Configure playing strength.
+   *
+   * - `setSkill(20)` — unrestricted Stockfish at skill 20 (full strength).
+   * - `setSkill(level, elo)` — play at `elo`: Stockfish's UCI_Elo limiting
+   *   handles 1320 and up; below that (the ~200–1319 ladder band) UCI_Elo
+   *   is impossible, so the engine runs Skill 0 at unrestricted strength and
+   *   the caller (ComputerPage) adds shallow depth + controlled blunders.
+   */
+  setSkill(level: number, targetElo?: number): void {
     const l = Math.max(0, Math.min(20, Math.round(level)))
-    this.worker.postMessage(`setoption name Skill Level value ${l}`)
-    if (l < 20) {
-      // map skill0-19 to a plausible Elo band for weak play
-      const elo = 850 + l * 95
-      this.worker.postMessage('setoption name UCI_LimitStrength value true')
-      this.worker.postMessage(`setoption name UCI_Elo value ${Math.min(elo, 2850)}`)
-    } else {
+    if (targetElo === undefined) {
+      this.worker.postMessage(`setoption name Skill Level value ${l}`)
       this.worker.postMessage('setoption name UCI_LimitStrength value false')
+    } else if (targetElo < 1320) {
+      this.worker.postMessage('setoption name Skill Level value 0')
+      this.worker.postMessage('setoption name UCI_LimitStrength value false')
+    } else if (targetElo >= 2850) {
+      // top of the ladder is simply full strength
+      this.worker.postMessage('setoption name Skill Level value 20')
+      this.worker.postMessage('setoption name UCI_LimitStrength value false')
+    } else {
+      this.worker.postMessage('setoption name Skill Level value 20')
+      this.worker.postMessage('setoption name UCI_LimitStrength value true')
+      this.worker.postMessage(`setoption name UCI_Elo value ${Math.round(targetElo)}`)
     }
     this.worker.postMessage('setoption name Clear Hash')
   }
@@ -157,6 +172,7 @@ export class Engine {
     const parts = ['go']
     if (job.opts.depth) parts.push(`depth ${job.opts.depth}`)
     if (job.opts.movetime) parts.push(`movetime ${job.opts.movetime}`)
+    if (job.opts.multiPv && job.opts.multiPv > 1) parts.push(`multipv ${job.opts.multiPv}`)
     this.worker.postMessage(parts.join(' '))
   }
 
