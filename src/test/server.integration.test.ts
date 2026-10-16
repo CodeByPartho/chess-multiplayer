@@ -129,6 +129,18 @@ describe.skipIf(!RUN)('server rating stack (TEST database — never production)'
     return id
   }
 
+  /** an anonymous guest account — what the app creates on first visit */
+  const createAnonUser = async (local: string): Promise<string> => {
+    await asPostgres()
+    const id = crypto.randomUUID()
+    await q(`insert into auth.users (id, is_anonymous) values ($1, true)`, [id])
+    await q(`insert into public.guests (id, username) values ($1, $2) on conflict (id) do nothing`, [
+      id,
+      local,
+    ])
+    return id
+  }
+
   beforeAll(async () => {
     server = await startTestDb()
     db = new Client(server.client)
@@ -348,6 +360,73 @@ describe.skipIf(!RUN)('server rating stack (TEST database — never production)'
     await asUser(alice)
     const res = (await one(`select public.finalize_game($1) as r`, [fifth.id])).r as { reason: string }
     expect(res.reason).toBe('casual')
+  })
+
+  it('anonymous guests are rated like anyone else — both rows and history', async () => {
+    const stamp = `${Date.now()}`
+    const anonW = await createAnonUser(`AnonW${stamp}`)
+    const anonB = await createAnonUser(`AnonB${stamp}`)
+    const g = await makeGame(anonW, anonB, 4)
+    await asUser(anonW)
+    const res = (await one(`select public.finalize_game($1) as r`, [g.id])).r as {
+      changed: boolean
+      category: string
+      white: { user_id: string; before: number; after: number }
+      black: { user_id: string; before: number; after: number }
+    }
+    expect(res.changed).toBe(true)
+    expect(res.category).toBe('blitz')
+    expect(res.white.user_id).toBe(anonW)
+    expect(res.black.user_id).toBe(anonB)
+    // both ratings moved off the seeded default; the winner sits above
+    expect(res.white.after).not.toBe(res.white.before)
+    expect(res.black.after).not.toBe(res.black.before)
+    expect(res.white.after).toBeGreaterThan(res.black.after)
+
+    await asPostgres()
+    const ratings = await q(
+      `select user_id, rating, games, wins, losses from public.ratings
+        where user_id in ($1, $2) and category = 'blitz'`,
+      [anonW, anonB],
+    )
+    expect(ratings.length).toBe(2)
+    const byId = new Map(ratings.map((r) => [r.user_id as string, r]))
+    expect(byId.get(anonW).rating).toBe(res.white.after)
+    expect(byId.get(anonW).games).toBe(1)
+    expect(byId.get(anonW).wins).toBe(1)
+    expect(byId.get(anonB).rating).toBe(res.black.after)
+    expect(byId.get(anonB).games).toBe(1)
+    expect(byId.get(anonB).losses).toBe(1)
+
+    const history = await q(
+      `select user_id, opponent_id, category, rating_after from public.rating_history
+        where game_id = $1 order by user_id`,
+      [g.id],
+    )
+    expect(history.length).toBe(2)
+    for (const h of history) {
+      expect(h.category).toBe('blitz')
+      expect(h.rating_after).toBe(byId.get(h.user_id).rating)
+    }
+    expect(history.find((h) => h.user_id === anonW)?.opponent_id).toBe(anonB)
+    expect(history.find((h) => h.user_id === anonB)?.opponent_id).toBe(anonW)
+  })
+
+  it('the farming cap counts the pair, not one colour — alternating sides still cap', async () => {
+    const stamp = `${Date.now()}`
+    const fm1 = await createAnonUser(`FarmA${stamp}`)
+    const fm2 = await createAnonUser(`FarmB${stamp}`)
+    for (let i = 0; i < 4; i++) {
+      const g = i % 2 === 0 ? await makeGame(fm1, fm2, 4) : await makeGame(fm2, fm1, 4)
+      await asUser(i % 2 === 0 ? fm1 : fm2)
+      const res = (await one(`select public.finalize_game($1) as r`, [g.id])).r as { changed: boolean }
+      expect(res.changed).toBe(true)
+    }
+    // after alternating sides a one-sided count would read <= 2; the pair
+    // count must still force the fifth game casual
+    const fifth = await makeGame(fm2, fm1, 4)
+    expect(fifth.rated).toBe(false)
+    expect(fifth.casual_reason).toBe('farming_limit')
   })
 
   /* ------------------------------------------------------------------ */

@@ -168,11 +168,20 @@ function TopNav() {
 /** auth-aware account control: guest chip + sign in, or account menu */
 function AccountChip() {
   const auth = useAuth()
-  const identity = useState(() => loadIdentity())[0]
+  const [identity, setIdentity] = useState(() => loadIdentity())
   const [modal, setModal] = useState(false)
   const [menu, setMenu] = useState(false)
   const [profile, setProfile] = useState<ProfileRow | null>(null)
   const [rapid, setRapid] = useState<number | null>(null)
+
+  // the guest profile lives in localStorage — re-read it whenever it is
+  // written (post-game rating sync, name/avatar edits) so the chip shows
+  // the current values without a reload
+  useEffect(() => {
+    const onIdentity = () => setIdentity(loadIdentity())
+    window.addEventListener('fc:identity-changed', onIdentity)
+    return () => window.removeEventListener('fc:identity-changed', onIdentity)
+  }, [])
 
   useEffect(() => {
     if (!auth.user || auth.isGuest || auth.loading || !onlineEnabled) {
@@ -204,12 +213,16 @@ function AccountChip() {
   }
 
   if (!signedIn) {
+    // the chip is the guest's headline rating: show the pool of their last
+    // finished game (quick pair defaults to blitz), falling back to rapid
+    const headlinePool =
+      identity.lastPool && identity.ratings[identity.lastPool] ? identity.lastPool : 'rapid'
     return (
       <>
-        <Link to="/settings" className="nav-chip" title="Your guest profile">
+        <Link to="/settings" className="nav-chip" title={`Your guest profile — ${headlinePool} rating`}>
           <Avatar seed={identity.avatarSeed} size={22} />
           <span>{identity.username}</span>
-          <span className="rating">{identity.ratings.rapid.rating}</span>
+          <span className="rating">{identity.ratings[headlinePool].rating}</span>
         </Link>
         <button className="btn btn-primary btn-sm nav-signin" onClick={() => setModal(true)} aria-label="Sign in">
           <span className="ns-icon" aria-hidden="true">

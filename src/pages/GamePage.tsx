@@ -202,6 +202,7 @@ function OnlineGameView({
   const [myFinalRating, setMyFinalRating] = useState<number | null>(null)
   const [finalRd, setFinalRd] = useState<number | null>(null)
   const [theirFinalRating, setTheirFinalRating] = useState<number | null>(null)
+  const [rateNote, setRateNote] = useState<string | null>(null)
   const [preview, setPreview] = useState<{ win: number; draw: number; loss: number } | null>(null)
   const [actionBusy, setActionBusy] = useState(false)
   const [toastOnce, setToastOnce] = useState<string | null>(null)
@@ -276,6 +277,8 @@ function OnlineGameView({
     void (async () => {
       const [mine, theirs] = await Promise.all([fetchRatingFor(myId, pool), fetchRatingFor(oppId, pool)])
       if (!alive) return
+      // server truth beats the possibly-stale local copy for the count-up
+      preRating.current = mine.rating
       setPreview(previewDeltas(mine, theirs, Date.now()))
     })()
     return () => {
@@ -319,17 +322,23 @@ function OnlineGameView({
           setMyFinalRating(mine.after)
           setFinalRd(mine.rd)
           if (theirs) setTheirFinalRating(theirs.after)
-          await syncRatingsToLocal()
-          return
+        } else {
+          // already finalized earlier (the server rates the game the moment
+          // it ends) or not rateable — read the authoritative current rating
+          // instead, and say why it did not move when that is the reason
+          if (fin?.reason === 'too_few_moves') {
+            setRateNote('Not rated — a game needs at least 2 moves from each side')
+          }
+          const r = await fetchRatingFor(myId, pool).catch(() => null)
+          if (r) {
+            setMyFinalRating(r.rating)
+            setRatingDelta(r.rating - preRating.current)
+            setFinalRd(r.rd)
+          }
         }
-        // already finalized earlier (retry / other player got there first) or
-        // not rateable — read the authoritative current rating instead
-        const r = await fetchRatingFor(myId, pool).catch(() => null)
-        if (r) {
-          setMyFinalRating(r.rating)
-          setRatingDelta(r.rating - preRating.current)
-          setFinalRd(r.rd)
-        }
+        // whoever finalized it, the rating the guest chip and the guest
+        // profile show must catch up — never leave the local copy behind
+        await syncRatingsToLocal(pool)
       })()
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -664,6 +673,7 @@ function OnlineGameView({
               {game.casual_reason === 'farming_limit' && (
                 <span className="rb-farm"> · Rated games vs one opponent are capped at 4 per 24h — this one is casual</span>
               )}
+              {rateNote && <span className="rb-farm"> · {rateNote}</span>}
             </div>
             {game.rated && ratingDelta !== null && myFinalRating !== null && (
               <div className="rb-rating">

@@ -12,6 +12,8 @@ export interface GuestIdentity {
   /** ISO3166-1 alpha-2 country code, optional; displayed as emoji flag */
   flag: string | null
   ratings: Record<Pool, Rating200>
+  /** pool of the last finished online game — the chip's headline rating */
+  lastPool?: Pool
   createdAt: number
   /** rating scale the stored numbers use (200 = current, 1500 = legacy) */
   scale?: number
@@ -77,6 +79,11 @@ export function loadIdentity(): GuestIdentity {
 
 export function saveIdentity(id: GuestIdentity): void {
   save(STORAGE_KEYS.identity, id)
+  // the identity is shown outside React state (account chip) — announce every
+  // write so live UI can pick the new value up without a reload
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new Event('fc:identity-changed'))
+  }
 }
 
 export const USERNAME_RE = /^[A-Za-z0-9_À-ɏ一-鿿-]{3,20}$/
