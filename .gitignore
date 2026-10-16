@@ -2,7 +2,11 @@ node_modules/
 dist/
 .env*
 !.env.example
+!.env.test.example
 *.log
+
+# database dumps (scripts/db-backup.mjs writes here)
+backups/
 
 # Playwright test output (screenshots/ is a kept deliverable)
 test-results/

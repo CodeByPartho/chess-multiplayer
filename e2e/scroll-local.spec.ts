@@ -3,7 +3,6 @@ import {
   VIEWPORTS,
   LINE_20,
   expectScrollUnchanged,
-  playLine,
   playRandomLegalMove,
   playUci,
   scrollState,
