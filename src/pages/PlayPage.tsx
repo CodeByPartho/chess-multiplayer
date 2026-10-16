@@ -4,7 +4,9 @@ import { QUICK_TIME_CONTROLS, type TimeControl } from '@/lib/chess/types'
 import { getMatchPrefs, setMatchPrefs } from '@/lib/matchPrefs'
 import { startQueue, type QueueEvent } from '@/net/queue'
 import { createInvite, joinInvite, sendAction, subscribeGame, type ServerGame } from '@/net/gameClient'
-import { ensureAuth, onlineEnabled } from '@/net/supabase'
+import { ensureAuth, onlineEnabled, myUserId } from '@/net/supabase'
+import { fetchRatingFor } from '@/net/ratingsClient'
+import { categoryOf } from '@/lib/chess/categories'
 import { loadIdentity } from '@/lib/identity'
 import { copyText } from '@/lib/clipboard'
 import { useToast } from '@/components/Toast'
@@ -19,6 +21,7 @@ export default function PlayPage() {
   const [rated, setRated] = useState(prefs?.rated ?? true)
   const [tc, setTc] = useState<TimeControl>(prefs?.tc ?? QUICK_TIME_CONTROLS[4])
   const [queue, setQueue] = useState<QueueEvent | null>(null)
+  const [searchRating, setSearchRating] = useState<number | null>(null)
   const stopRef = useRef<(() => void) | null>(null)
 
   // friend-invite states
@@ -48,8 +51,22 @@ export default function PlayPage() {
   const startSearch = () => {
     setMatchPrefs({ tc, rated })
     setQueue({ type: 'connecting' })
+    // authoritative rating for the searching UI (falls back to local seed)
+    void (async () => {
+      try {
+        if (!onlineEnabled) return
+        await ensureAuth()
+        const uid = await myUserId()
+        if (!uid) return
+        const r = await fetchRatingFor(uid, categoryOf(tc))
+        setSearchRating(Math.round(r.rating))
+      } catch {
+        /* queue events surface real errors */
+      }
+    })()
     void startQueue(tc, rated, (e) => {
       if (e.type === 'matched') {
+        if (e.notice) toast.show(e.notice, 'info')
         navigate(`/play/${e.gameId}`)
         return
       }
@@ -133,11 +150,13 @@ export default function PlayPage() {
           {queue.type === 'error' ? 'Matchmaking error' : queue.type === 'connecting' ? 'Connecting…' : 'Looking for an opponent'}
         </h2>
         <p style={{ color: 'var(--text-dim)' }}>
-          {tc.label} · {rated ? 'Rated' : 'Casual'} · your rating {loadIdentity().ratings[poolOf(tc)].rating}
+          {tc.label} · {rated ? 'Rated' : 'Casual'} · your rating{' '}
+          {searchRating ?? loadIdentity().ratings[categoryOf(tc)].rating}
         </p>
         {queue.type === 'waiting' && (
-          <p className="hint">
-            Searching since {Math.round((Date.now() - queue.since) / 1000)}s — the rating window widens the longer you wait.
+          <p className="hint" aria-live="polite">
+            Searching {Math.round((Date.now() - queue.since) / 1000)}s — accepting anyone within ±
+            {queue.window} rating points, widening as you wait.
           </p>
         )}
         {queue.type === 'error' && <p className="error-text">{queue.message}</p>}
@@ -272,10 +291,6 @@ export default function PlayPage() {
       </div>
     </div>
   )
-}
-
-function poolOf(tc: TimeControl): 'bullet' | 'blitz' | 'rapid' | 'classical' {
-  return tc.type === 'bullet' || tc.type === 'blitz' || tc.type === 'rapid' ? tc.type : 'classical'
 }
 
 function tcFamily(type: string): string {

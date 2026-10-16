@@ -30,6 +30,7 @@ export interface ServerGame {
   result: { winner: Color | null; reason: string } | null
   rematch: { w: boolean; b: boolean; game_id: string | null }
   invite_code: string | null
+  casual_reason?: string | null
   created_at: string
 }
 
@@ -38,7 +39,10 @@ export interface PlayerInfo {
   username: string
   avatar_seed: string
   flag: string | null
+  /** legacy 1500-scale jsonb kept for pre-migration servers */
   ratings: Record<string, { rating: number; rd: number }>
+  /** 200-scale display ratings (ratings table, else legacy converted) */
+  displayRatings?: Record<string, { rating: number; rd: number; provisional: boolean }>
   last_seen: string
 }
 
@@ -64,6 +68,29 @@ export async function fetchPlayers(game: ServerGame): Promise<{ white: PlayerInf
   if (ids.length === 0) return { white: null, black: null }
   const { data } = await supabase.from('guests').select('*').in('id', ids)
   const rows = (data ?? []) as PlayerInfo[]
+
+  // 200-scale ratings (ratings table first; legacy jsonb converted otherwise)
+  const { data: ratingRows } = await supabase
+    .from('ratings')
+    .select('user_id, category, rating, rd')
+    .in('user_id', ids)
+  const modern = new Map<string, Record<string, { rating: number; rd: number; provisional: boolean }>>()
+  for (const r of ratingRows ?? []) {
+    const byUser = modern.get(r.user_id) ?? {}
+    byUser[r.category] = { rating: r.rating, rd: r.rd, provisional: r.rd > 110 }
+    modern.set(r.user_id, byUser)
+  }
+  const legacy = (r: PlayerInfo): Record<string, { rating: number; rd: number; provisional: boolean }> => {
+    const out: Record<string, { rating: number; rd: number; provisional: boolean }> = {}
+    for (const [k, v] of Object.entries(r.ratings ?? {})) {
+      out[k] = { rating: (v?.rating ?? 1500) - 1300, rd: v?.rd ?? 350, provisional: (v?.rd ?? 350) > 110 }
+    }
+    return out
+  }
+  for (const r of rows) {
+    if (!r.displayRatings) r.displayRatings = modern.get(r.id) ?? legacy(r)
+  }
+
   return {
     white: rows.find((r) => r.id === game.white_id) ?? null,
     black: rows.find((r) => r.id === game.black_id) ?? null,

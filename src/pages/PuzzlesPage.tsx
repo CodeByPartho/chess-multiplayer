@@ -1,9 +1,11 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import { Chess } from 'chess.js'
 import { PuzzleBoard } from '@/components/PuzzleBoard'
 import { useToast } from '@/components/Toast'
 import { Link, useRoute } from '@/router'
 import { loadIdentity, saveIdentity } from '@/lib/identity'
+import { updateRating200, PUZZLE_OPP_RD, clampRating } from '@/lib/chess/rating200'
+import { submitPuzzleResult } from '@/net/ratingsClient'
 import {
   PUZZLE_THEMES,
   dailyPuzzle,
@@ -146,7 +148,8 @@ export default function PuzzlesPage({ puzzleId }: { puzzleId?: string }) {
       <div className="card">
         <div className="hint">
           All puzzles are original mate-in-one positions generated and re-verified with the chess rules engine. Solving
-          updates your local puzzle rating (Glicko-tracked separately per pool).
+          rates you against the puzzle with Glicko-2 — same 200-scale system as every other pool. Signed-in players also
+          sync it to their profile and leaderboard.
         </div>
       </div>
     </div>
@@ -185,6 +188,14 @@ function DailyCard({ stats }: { stats: PuzzleStats }) {
 
 /* ------------------------------------------------------------------ */
 
+/* unique per attempt: epoch-ms scaled + in-session sequence, so the server's
+ * UNIQUE (user, puzzle, attempt_no) turns any replay into a no-op */
+let attemptSeq = 0
+function nextAttemptNo(): number {
+  attemptSeq = (attemptSeq + 1) % 1000
+  return Date.now() * 1000 + attemptSeq
+}
+
 function PuzzleSolve({
   puzzle,
   modeLabel,
@@ -206,33 +217,78 @@ function PuzzleSolve({
   const [showSolution, setShowSolution] = useState(false)
   const [ratingDelta, setRatingDelta] = useState(0)
   const [attemptKey, setAttemptKey] = useState(0)
+  const [attemptNo, setAttemptNo] = useState(() => nextAttemptNo())
   const [isDaily] = useState(() => puzzle.id === dailyPuzzle().id)
+  const lossRecorded = useRef(false)
   const mySide = sideToMove(puzzle.fen)
 
   const recordSolved = (seconds: number) => {
     setSolvedSec(seconds)
     const next = recordPuzzleResult(stats, puzzle.themes, true)
-    // Elo-style puzzle rating update (K=16)
-    const identity = loadIdentity()
-    const p = identity.ratings.puzzle
-    const expected = 1 / (1 + Math.pow(10, (p.rating - puzzle.rating) / 400))
-    const delta = Math.round(16 * (1 - expected))
-    p.rating = Math.max(100, Math.min(3000, p.rating + delta))
-    saveIdentity(identity)
-    setRatingDelta(delta)
+    applyPuzzleResult(true, Math.round(seconds * 1000))
     if (isDaily) markDailyDone(next, dayKey())
     onRecord(loadPuzzleStats())
   }
 
+  /**
+   * One Glicko-2 rating period against the puzzle's difficulty (a fixed-RD
+   * ~opponent), on the same 200 scale as every other pool.
+   *
+   * The number moves instantly from this local preview so the UX feels live;
+   * the server then computes the same update itself from (puzzle, solved,
+   * time) alone and its answer replaces the preview. The browser never tells
+   * the server what the rating should become.
+   */
+  const applyPuzzleResult = (solved: boolean, timeMs: number | null) => {
+    const identity = loadIdentity()
+    const before = identity.ratings.puzzle
+    const after = updateRating200(before, [
+      { oppRating: puzzle.rating, oppRd: PUZZLE_OPP_RD, score: solved ? 1 : 0, elapsedMs: Date.now() - before.updatedAt },
+    ])
+    identity.ratings.puzzle = after
+    saveIdentity(identity)
+    setRatingDelta(Math.round(after.rating - before.rating))
+    void pushPuzzleRating(solved, timeMs, before.rating)
+  }
+
+  /** adopt server truth (rate limits, ignores and replays all arrive here) */
+  const pushPuzzleRating = (solved: boolean, timeMs: number | null, previewBefore: number) => {
+    void submitPuzzleResult({ puzzleId: puzzle.id, solved, timeMs, attemptNo }).then((res) => {
+      if (res.offline || !res.ok) {
+        if (res.error) toast.show(res.error, 'info')
+        return
+      }
+      if (typeof res.rating !== 'number') return
+      const id = loadIdentity()
+      id.ratings.puzzle = clampRating({
+        rating: res.rating,
+        rd: res.rd ?? id.ratings.puzzle.rd,
+        vol: id.ratings.puzzle.vol,
+        updatedAt: Date.now(),
+      })
+      saveIdentity(id)
+      setRatingDelta(Math.round(res.rating - previewBefore))
+      if (res.ignored) toast.show('Solved faster than possible — recorded, but not rated', 'info')
+    })
+  }
+
   const giveUp = () => {
+    if (solvedSec !== null || lossRecorded.current) return
+    lossRecorded.current = true
     setShowSolution(true)
+    recordPuzzleResult(stats, puzzle.themes, false)
+    applyPuzzleResult(false, null)
+    onRecord(loadPuzzleStats())
     sounds.play('end-draw')
   }
 
   const retry = () => {
+    lossRecorded.current = false
     setWrongCount(0)
     setShowSolution(false)
     setSolvedSec(null)
+    setRatingDelta(0)
+    setAttemptNo(nextAttemptNo())
     setAttemptKey((k) => k + 1)
   }
 
@@ -303,6 +359,12 @@ function PuzzleSolve({
               ↻ Restart
             </button>
           </div>
+
+          <p className="hint" style={{ marginTop: 10, lineHeight: 1.45 }}>
+            Puzzle ratings are computed on the server from your result, but the solutions ship
+            with the app — they can&apos;t be fully cheat-proof, so puzzles keep their own board
+            and stay off the main leaderboards.
+          </p>
 
           {!solved && wrongCount > 0 && (
             <div className="hint">Not the move — try again! ({wrongCount} wrong)</div>

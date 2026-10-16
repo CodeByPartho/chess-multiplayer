@@ -1,0 +1,6 @@
+User-agent: *
+Allow: /
+Disallow: /settings
+Disallow: /auth/callback
+
+Sitemap: https://chess-multiplayer-788.netlify.app/sitemap.xml

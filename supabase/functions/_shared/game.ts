@@ -1,7 +1,6 @@
 // Server-side game logic shared by the Edge Functions.
 import { createClient, type SupabaseClient } from 'jsr:@supabase/supabase-js@2'
 import { Chess } from 'npm:chess.js@1.4.0'
-import { updateGlicko, type GlickoPlayer } from './glicko.ts'
 
 const START_FEN = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1'
 
@@ -86,37 +85,15 @@ export function terminationAfter(chess: Chess, mover: 'w' | 'b'): GameResultRec 
   return null
 }
 
-function poolFor(tc: GameRow['tc']): string {
-  const t = tc?.type
-  return t === 'bullet' || t === 'blitz' || t === 'rapid' || t === 'classical' ? t : 'classical'
-}
-
-/** Update both players' Glicko ratings for a finished rated game. */
-export async function applyRatings(supa: SupabaseClient, game: GameRow, result: GameResultRec): Promise<void> {
-  if (!game.rated || !game.white_id || !game.black_id) return
-  const pool = poolFor(game.tc)
-  const { data: rows, error } = await supa.from('guests').select('id, ratings').in('id', [game.white_id, game.black_id])
-  if (error || !rows || rows.length !== 2) return
-
-  const now = Date.now()
-  const byId = new Map(rows.map((r) => [r.id, r]))
-  const white = byId.get(game.white_id)!
-  const black = byId.get(game.black_id)!
-  const wr = (white.ratings?.[pool] ?? { rating: 1500, rd: 350, vol: 0.06, updatedAt: now }) as GlickoPlayer
-  const br = (black.ratings?.[pool] ?? { rating: 1500, rd: 350, vol: 0.06, updatedAt: now }) as GlickoPlayer
-
-  const whiteScore = result.winner === 'w' ? 1 : result.winner === 'b' ? 0 : 0.5
-  const elapsed = (w: GlickoPlayer) => Math.max(0, now - (w.updatedAt || now - 86_400_000))
-
-  const newWhite = updateGlicko(wr, [{ oppRating: br.rating, oppRd: br.rd, score: whiteScore, elapsedMs: elapsed(wr) }])
-  const newBlack = updateGlicko(br, [{ oppRating: wr.rating, oppRd: wr.rd, score: 1 - whiteScore, elapsedMs: elapsed(br) }])
-
-  const patch = (id: string, p: GlickoPlayer) => {
-    const cur = (byId.get(id)!.ratings ?? {}) as Record<string, unknown>
-    return { ...cur, [pool]: p }
-  }
-  await supa.from('guests').update({ ratings: patch(game.white_id, newWhite) }).eq('id', game.white_id)
-  await supa.from('guests').update({ ratings: patch(game.black_id, newBlack) }).eq('id', game.black_id)
+/**
+ * Rate a finished game through the database. finalize_game() re-reads the
+ * game and both ratings rows server-side, computes Glicko-2 (200 scale) and
+ * writes both players atomically — and is idempotent, so the client may also
+ * call it on reconnect without ever double-counting a result.
+ */
+export async function finalizeGame(supa: SupabaseClient, gameId: string): Promise<void> {
+  const { error } = await supa.rpc('finalize_game', { p_game_id: gameId })
+  if (error) console.error('finalize_game failed', gameId, error.message)
 }
 
 /** End a game: set result + status, update ratings exactly once. */
@@ -134,7 +111,7 @@ export async function endGame(
     .select('id')
   if (error) throw new Error(`db: ${error.message}`)
   const claimed = !!data && data.length > 0
-  if (claimed && status === 'over') await applyRatings(supa, game, result)
+  if (claimed && status === 'over') await finalizeGame(supa, game.id)
   return claimed
 }
 

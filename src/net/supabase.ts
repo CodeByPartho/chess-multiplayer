@@ -8,7 +8,13 @@ const anon = (import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined) ?? '
 export const onlineEnabled = !!url && !!anon
 
 export const supabase: SupabaseClient = createClient(url || 'http://localhost', anon || 'anon', {
-  auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: false },
+  auth: {
+    persistSession: true,
+    autoRefreshToken: true,
+    detectSessionInUrl: false,
+    // PKCE for OAuth + email links: the code verifier stays on the device
+    flowType: 'pkce',
+  },
 })
 
 let authPromise: Promise<void> | null = null

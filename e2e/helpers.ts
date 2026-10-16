@@ -61,7 +61,25 @@ export async function waitBoardSettled(page: Page) {
       () => new Promise<void>((r) => requestAnimationFrame(() => requestAnimationFrame(() => r()))),
     )
     const s2 = await boardSize(page)
-    if (Math.abs(s1.w - s2.w) < 0.5 && Math.abs(s1.h - s2.h) < 0.5) return
+    if (Math.abs(s1.w - s2.w) < 0.5 && Math.abs(s1.h - s2.h) < 0.5) break
+  }
+  // pieces animate their position (0.14s transform) after flips and moves —
+  // wait until they stop moving too, so geometry assertions measure at rest
+  const pieceSig = () =>
+    page.evaluate(() =>
+      [...document.querySelectorAll('.board .piece')]
+        .map((e) => {
+          const r = (e as HTMLElement).getBoundingClientRect()
+          return `${(e as HTMLElement).dataset.square}:${Math.round(r.left)},${Math.round(r.top)}`
+        })
+        .sort()
+        .join('|'),
+    )
+  for (let i = 0; i < 25; i++) {
+    const s1 = await pieceSig()
+    await page.waitForTimeout(190) // > the 140ms piece transition
+    const s2 = await pieceSig()
+    if (s1 === s2) return
   }
 }
 

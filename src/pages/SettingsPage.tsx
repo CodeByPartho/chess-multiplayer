@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useSettings, updateSettings } from '@/lib/settings'
 import { loadIdentity, saveIdentity, validateUsername, flagOptions, avatarDataUrl, type GuestIdentity } from '@/lib/identity'
 import { boardThemes } from '@/board/themes'
@@ -7,10 +7,16 @@ import { Confirm } from '@/components/Modal'
 import { useToast } from '@/components/Toast'
 import { Link } from '@/router'
 import { sounds } from '@/lib/sounds'
+import { useAuth } from '@/net/auth'
+import { fetchRatings, type RatingMap } from '@/net/ratingsClient'
+import { onlineEnabled } from '@/net/supabase'
 
 export default function SettingsPage() {
   const settings = useSettings()
   const toast = useToast()
+  const auth = useAuth()
+  const isAccount = onlineEnabled && !!auth.user && !auth.isGuest
+  const [serverRatings, setServerRatings] = useState<RatingMap | null>(null)
   const [identity, setIdentity] = useState<GuestIdentity>(() => loadIdentity())
   const [nameDraft, setNameDraft] = useState(identity.username)
   const [nameError, setNameError] = useState<string | null>(null)
@@ -23,6 +29,17 @@ export default function SettingsPage() {
     saveIdentity(next)
   }
 
+  useEffect(() => {
+    if (!isAccount || !auth.user) return
+    let dead = false
+    void fetchRatings(auth.user.id).then((r) => {
+      if (!dead && r) setServerRatings(r)
+    })
+    return () => {
+      dead = true
+    }
+  }, [isAccount, auth.user?.id])
+
   const saveName = () => {
     const err = validateUsername(nameDraft)
     setNameError(err)
@@ -34,6 +51,43 @@ export default function SettingsPage() {
   return (
     <div className="settings-grid">
       <section className="card">
+        {isAccount && (
+          <>
+            <h2>Your account</h2>
+            <p className="hint" style={{ marginTop: -6 }}>
+              Signed in — your public profile, username, sign-in methods and data controls live in
+              account settings.
+            </p>
+            <div className="auth-row">
+              <Link to="/account" className="btn btn-primary btn-sm">
+                Account settings
+              </Link>
+              <Link to="/leaderboard" className="btn btn-ghost btn-sm">
+                Leaderboards
+              </Link>
+            </div>
+            <div className="divider" />
+            <h3 style={{ fontSize: 14.5 }}>Ratings (Glicko-2)</h3>
+            {!serverRatings ? (
+              <div className="skel" style={{ height: 84 }} />
+            ) : (
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr auto auto', gap: '4px 12px', fontSize: 14 }}>
+                {(['bullet', 'blitz', 'rapid', 'classical', 'puzzle'] as const).map((p) => (
+                  <span key={p} style={{ display: 'contents' }}>
+                    <span style={{ color: 'var(--text-dim)', textTransform: 'capitalize' }}>{p}</span>
+                    <b>
+                      {serverRatings[p].rating}
+                      {serverRatings[p].rd > 110 ? '?' : ''}
+                    </b>
+                    <span className="hint">±{serverRatings[p].rd}</span>
+                  </span>
+                ))}
+              </div>
+            )}
+          </>
+        )}
+        {!isAccount && (
+          <>
         <h2>Your guest profile</h2>
         <p className="hint" style={{ marginTop: -6 }}>
           Stored only on this device — no account, no email, no tracking.
@@ -118,6 +172,8 @@ export default function SettingsPage() {
             </span>
           ))}
         </div>
+          </>
+        )}
       </section>
 
       <section className="card">

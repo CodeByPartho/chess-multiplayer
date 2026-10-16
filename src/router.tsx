@@ -1,4 +1,14 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useState, type CSSProperties, type ReactNode } from 'react'
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+  type CSSProperties,
+  type MouseEvent as ReactMouseEvent,
+  type ReactNode,
+} from 'react'
 
 interface RouterValue {
   path: string
@@ -38,12 +48,14 @@ export function Link({
   className,
   title,
   style,
+  onClick,
 }: {
   to: string
   children: ReactNode
   className?: string
   title?: string
   style?: CSSProperties
+  onClick?: (e: ReactMouseEvent<HTMLAnchorElement>) => void
 }) {
   const { navigate } = useRoute()
   return (
@@ -53,6 +65,8 @@ export function Link({
       title={title}
       style={style}
       onClick={(e) => {
+        onClick?.(e)
+        if (e.defaultPrevented) return
         if (e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return
         e.preventDefault()
         navigate(to)

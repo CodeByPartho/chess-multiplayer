@@ -9,14 +9,11 @@ export function Chat({
   onReport,
   muted,
   onToggleMute,
-  onSecret,
 }: {
   gameId: string
   onReport: () => void
   muted: boolean
   onToggleMute: () => void
-  /** fired (sender-side only) when the hidden chat code toggles autopilot */
-  onSecret?: (engaged: boolean) => void
 }) {
   const [msgs, setMsgs] = useState<ChatMsg[]>([])
   const [draft, setDraft] = useState('')
@@ -24,20 +21,14 @@ export function Chat({
   const channelRef = useRef<ReturnType<typeof openChat> | null>(null)
   const listRef = useRef<HTMLDivElement>(null)
   const lastMineRef = useRef(false)
-  const secretRef = useRef(onSecret)
-  secretRef.current = onSecret
   const me = loadIdentity()
 
   useEffect(() => {
     if (muted) return
-    const ch = openChat(
-      gameId,
-      (m) => {
-        lastMineRef.current = m.fromId === me.id
-        setMsgs((prev) => [...prev.slice(-80), m])
-      },
-      (engaged) => secretRef.current?.(engaged),
-    )
+    const ch = openChat(gameId, (m) => {
+      lastMineRef.current = m.fromId === me.id
+      setMsgs((prev) => [...prev.slice(-80), m])
+    })
     channelRef.current = ch
     return () => {
       ch.close()

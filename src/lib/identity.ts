@@ -1,5 +1,8 @@
 import { load, save, STORAGE_KEYS } from './storage'
-import { DEFAULT_PLAYER, type GlickoPlayer } from './chess/glicko'
+import { DEFAULT_RATING, fromLegacy, type Rating200 } from './chess/rating200'
+
+/** current scale of the stored identity ratings (200 baseline) */
+const IDENTITY_SCALE = 200
 
 export interface GuestIdentity {
   id: string
@@ -8,15 +11,17 @@ export interface GuestIdentity {
   avatarSeed: string
   /** ISO3166-1 alpha-2 country code, optional; displayed as emoji flag */
   flag: string | null
-  ratings: Record<Pool, GlickoPlayer>
+  ratings: Record<Pool, Rating200>
   createdAt: number
+  /** rating scale the stored numbers use (200 = current, 1500 = legacy) */
+  scale?: number
 }
 
 export type Pool = 'bullet' | 'blitz' | 'rapid' | 'classical' | 'puzzle'
 
 const POOLS: Pool[] = ['bullet', 'blitz', 'rapid', 'classical', 'puzzle']
 
-function uuid(): string {
+export function uuid(): string {
   if (typeof crypto !== 'undefined' && crypto.randomUUID) return crypto.randomUUID()
   return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
     const r = (Math.random() * 16) | 0
@@ -35,9 +40,10 @@ export function defaultIdentity(): GuestIdentity {
     avatarSeed: uuid(),
     flag: null,
     ratings: Object.fromEntries(
-      POOLS.map((p) => [p, { ...DEFAULT_PLAYER, updatedAt: Date.now() }]),
-    ) as Record<Pool, GlickoPlayer>,
+      POOLS.map((p) => [p, { ...DEFAULT_RATING, updatedAt: Date.now() }]),
+    ) as Record<Pool, Rating200>,
     createdAt: Date.now(),
+    scale: IDENTITY_SCALE,
   }
 }
 
@@ -48,11 +54,20 @@ export function loadIdentity(): GuestIdentity {
     save(STORAGE_KEYS.identity, fresh)
     return fresh
   }
+  // migrate legacy 1500-based local ratings to the 200 scale
+  if (id.scale !== IDENTITY_SCALE) {
+    for (const p of POOLS) {
+      const rec = id.ratings[p]
+      id.ratings[p] = rec ? fromLegacy(rec) : { ...DEFAULT_RATING, updatedAt: Date.now() }
+    }
+    id.scale = IDENTITY_SCALE
+    save(STORAGE_KEYS.identity, id)
+  }
   // backfill any missing pools
   let changed = false
   for (const p of POOLS) {
     if (!id.ratings[p]) {
-      id.ratings[p] = { ...DEFAULT_PLAYER, updatedAt: Date.now() }
+      id.ratings[p] = { ...DEFAULT_RATING, updatedAt: Date.now() }
       changed = true
     }
   }
