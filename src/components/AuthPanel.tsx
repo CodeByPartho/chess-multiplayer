@@ -79,10 +79,18 @@ export function AuthPanel({
     }
     setAvail({ state: 'checking' })
     const t = window.setTimeout(() => {
-      void checkUsernameAvailable(trimmed).then((reason) => {
-        if (seq !== checkSeq.current) return
-        setAvail(reason ? { state: 'bad', message: reason } : { state: 'ok' })
-      })
+      // a cold visitor has no JWT yet — the availability check (and the
+      // upgrade itself) must run as the anonymous guest session
+      void ensureAuth()
+        .then(() => checkUsernameAvailable(trimmed))
+        .then((reason) => {
+          if (seq !== checkSeq.current) return
+          setAvail(reason ? { state: 'bad', message: reason } : { state: 'ok' })
+        })
+        .catch(() => {
+          if (seq !== checkSeq.current) return
+          setAvail({ state: 'bad', message: 'Could not check that username — try again' })
+        })
     }, 350)
     return () => window.clearTimeout(t)
   }, [name, purpose])
