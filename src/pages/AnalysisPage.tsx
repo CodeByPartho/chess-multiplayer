@@ -650,16 +650,6 @@ function AnalyzeView({
             arrows={bestArrow}
             interactiveMarks
             ariaLabel="Analysis board"
-            overlay={
-              review.running ? (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 8, alignItems: 'center', color: 'white' }}>
-                  <div className="spinner" />
-                  <span style={{ fontSize: 13 }}>
-                    Reviewing… {review.done}/{review.total} ({review.phase === 'eval' ? 'evaluating' : 'classifying'})
-                  </span>
-                </div>
-              ) : undefined
-            }
           />
         </div>
         <PlayerStrip

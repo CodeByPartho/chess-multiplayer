@@ -182,6 +182,7 @@ function ComputerGame({
   const [confirmResign, setConfirmResign] = useState(false)
   const savedRef = useRef(false)
   const evalJobRef = useRef(0)
+  const engineJobRef = useRef(0)
 
   // engine lifecycle
   useEffect(() => {
@@ -208,11 +209,18 @@ function ComputerGame({
   const turn = s.turn
   const fen = s.core.fen
 
-  // engine move (weak levels: shallow depth + controlled blunder injection)
+  // engine move — fire-and-forget (weak levels: shallow depth + controlled
+  // blunder injection). The search starts the moment the human's move lands
+  // and the reply is applied like any other move; nothing blocks the board.
+  // A generation token drops results for positions that no longer stand.
   useEffect(() => {
-    if (!engine || over || turn !== engineColor) return
-    let cancelled = false
+    if (!engine || over || turn !== engineColor) {
+      setThinking(false) // idle path — also clears a search killed by takeback/resign
+      return
+    }
+    const job = ++engineJobRef.current
     setThinking(true)
+    const startedAt = performance.now()
     engine
       .analyze(fen, {
         movetime: thinkTimeFor(setup.level),
@@ -220,14 +228,25 @@ function ComputerGame({
         multiPv: policy.weak ? 4 : 1,
       })
       .then((res) => {
-        if (cancelled) return
-        setThinking(false)
-        if (!res.bestmove || s.over) return
-        s.applyExternalMove(pickEngineMove(res, policy.blunderPct))
+        if (job !== engineJobRef.current) return
+        // low levels take a short human-like beat before replying — a delay
+        // before the move is applied, never a visible loading state
+        const minThink = setup.level <= 3 ? 400 + setup.level * 100 : 0
+        const wait = Math.max(0, minThink - (performance.now() - startedAt))
+        window.setTimeout(() => {
+          if (job !== engineJobRef.current) return
+          setThinking(false)
+          if (!res.bestmove || s.over) return
+          requestAnimationFrame(() => {
+            if (job === engineJobRef.current) s.applyExternalMove(pickEngineMove(res, policy.blunderPct))
+          })
+        }, wait)
       })
-      .catch(() => setThinking(false))
+      .catch(() => {
+        if (job === engineJobRef.current) setThinking(false)
+      })
     return () => {
-      cancelled = true
+      engineJobRef.current++
     }
   }, [engine, fen, over, turn, engineColor, setup.level, policy]) // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -359,7 +378,6 @@ function ComputerGame({
             premove={s.premove}
             arrows={arrows}
             ariaLabel={`Chess board vs ${lvl.name}`}
-            overlay={thinking && s.isLive ? <div className="spinner" /> : undefined}
           />
         </div>
         {stripFor(bottomColor, false)}
