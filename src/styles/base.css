@@ -787,6 +787,27 @@ html[data-appearance='light'] .clock.active { background: #2b2926; color: #f2efe
 /* onboarding */
 .onboard-avatar { display: flex; align-items: center; gap: 12px; margin: 10px 0 2px; }
 
+/* avatar picker (guest settings + account settings) */
+.avatar-actions { display: flex; flex-direction: column; gap: 6px; }
+.avatar-hist-title { margin: 12px 0 6px; }
+.avatar-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(44px, 1fr));
+  gap: 6px;
+  max-width: 540px;
+}
+.av-cell {
+  padding: 0;
+  border: 2px solid transparent;
+  border-radius: 8px;
+  background: var(--panel-2);
+  cursor: pointer;
+  line-height: 0;
+}
+.av-cell img { width: 100%; height: auto; aspect-ratio: 1; border-radius: 6px; display: block; }
+.av-cell:hover { border-color: var(--border); }
+.av-cell.sel { border-color: var(--accent); }
+
 /* account chip + dropdown (top nav and side nav) */
 .acct { position: relative; display: flex; }
 .acct-btn { cursor: pointer; border: 1px solid transparent; font: inherit; color: inherit; background: var(--panel-2); }

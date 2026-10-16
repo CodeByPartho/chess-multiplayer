@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link } from '@/router'
-import { Avatar } from '@/components/Avatar'
+import { AvatarPicker } from '@/components/AvatarPicker'
 import { Confirm } from '@/components/Modal'
 import { useToast } from '@/components/Toast'
 import { useAuth, identitySummary, signOutEverywhere, startProviderRedirect, type OAuthProvider } from '@/net/auth'
@@ -13,7 +13,8 @@ import {
 } from '@/net/profileClient'
 import { fetchRatingHistory, fetchRatings } from '@/net/ratingsClient'
 import { fetchPlayerGames } from '@/net/profileClient'
-import { validateUsername, uuid, loadIdentity, saveIdentity } from '@/lib/identity'
+import { validateUsername, loadIdentity, saveIdentity } from '@/lib/identity'
+import { prepareAvatarImage, uploadAvatar, removeAvatarObject } from '@/lib/avatarUpload'
 import { supabase, onlineEnabled } from '@/net/supabase'
 
 type Avail = { state: 'idle' | 'checking' | 'ok' | 'bad'; message?: string }
@@ -27,9 +28,11 @@ export default function AccountPage() {
 
   const [name, setName] = useState('')
   const [seed, setSeed] = useState('')
+  const [path, setPath] = useState<string | null>(null)
   const [flag, setFlag] = useState('')
   const [avail, setAvail] = useState<Avail>({ state: 'idle' })
   const [busy, setBusy] = useState(false)
+  const [uploadBusy, setUploadBusy] = useState(false)
   const [nameSaved, setNameSaved] = useState('')
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [linkBusy, setLink] = useState<OAuthProvider | null>(null)
@@ -42,9 +45,12 @@ export default function AccountPage() {
     void fetchMyProfile(auth.user.id).then((p) => {
       if (dead) return
       setProfile(p)
-      setName(p?.username ?? '')
-      setSeed(p?.avatar_seed ?? loadIdentity().avatarSeed)
-      setFlag(p?.flag ?? '')
+      // initialize the editable fields once — a slow load must not clobber
+      // a choice the user already made
+      setName((cur) => cur || (p?.username ?? ''))
+      setSeed((cur) => cur || (p?.avatar_seed ?? loadIdentity().avatarSeed))
+      setPath((cur) => cur ?? p?.avatar_path ?? null)
+      setFlag((cur) => cur || (p?.flag ?? ''))
       setNameSaved(p?.username ?? '')
       setLoaded(true)
     })
@@ -109,6 +115,56 @@ export default function AccountPage() {
       toast.show('Profile updated.')
     } finally {
       setBusy(false)
+    }
+  }
+
+  // Choosing a generated/historical face replaces an uploaded picture:
+  // clear avatar_path right away (uploaded wins over seed in the display
+  // order) so the preview — and everyone else — sees the new face even
+  // before "Save profile" persists the seed itself.
+  const chooseSeed = (next: string) => {
+    setSeed(next)
+    if (!path || !auth.user) return
+    const old = path
+    setPath(null)
+    void supabase
+      .from('profiles')
+      .update({ avatar_path: null })
+      .eq('id', auth.user.id)
+      .then(({ error }) => {
+        if (error) {
+          setPath(old)
+          toast.error(`Could not remove the uploaded avatar: ${error.message}`)
+          return
+        }
+        void removeAvatarObject(old)
+        window.dispatchEvent(new Event('fc:profile-changed'))
+      })
+  }
+
+  const uploadFile = async (file: File) => {
+    if (!auth.user || !profile || uploadBusy) return
+    setUploadBusy(true)
+    try {
+      const blob = await prepareAvatarImage(file)
+      const next = await uploadAvatar(auth.user.id, blob)
+      const { error } = await supabase
+        .from('profiles')
+        .update({ avatar_path: next })
+        .eq('id', auth.user.id)
+      if (error) {
+        await removeAvatarObject(next)
+        toast.error(`Could not save the avatar: ${error.message}`)
+        return
+      }
+      void removeAvatarObject(path) // replaced — best effort
+      setPath(next)
+      toast.show('Avatar uploaded.')
+      window.dispatchEvent(new Event('fc:profile-changed'))
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Could not upload that image')
+    } finally {
+      setUploadBusy(false)
     }
   }
 
@@ -242,12 +298,15 @@ export default function AccountPage() {
             <Link to="/">Open setup</Link>
           </div>
         )}
-        <div className="onboard-avatar">
-          <Avatar seed={seed} size={54} />
-          <button className="btn btn-ghost" type="button" onClick={() => setSeed(uuid())} aria-label="Shuffle avatar">
-            Shuffle avatar
-          </button>
-        </div>
+        <AvatarPicker
+          seed={seed}
+          path={path}
+          name={profile?.username}
+          canUpload={!!profile}
+          uploadBusy={uploadBusy}
+          onSeed={chooseSeed}
+          onUpload={(f) => void uploadFile(f)}
+        />
 
         <label className="field-label" htmlFor="acc-name">
           Username
