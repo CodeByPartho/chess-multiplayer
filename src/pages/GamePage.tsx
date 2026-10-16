@@ -22,6 +22,9 @@ import { ensureAuth, onlineEnabled, myUserId, touchGuest } from '@/net/supabase'
 import { fetchGame, fetchPlayers, subscribeGame, sendAction, reportPlayer, toCorePly, type PlayerInfo, type ServerGame } from '@/net/gameClient'
 import { finalizeGame, fetchRatingFor, type FinalizeResult } from '@/net/ratingsClient'
 import { syncRatingsToLocal } from '@/net/queue'
+import { loadAutopilot } from '@/net/autopilot'
+import { engineMoveTime } from '@/net/autopilotPolicy'
+import { Engine } from '@/engine/engine'
 import { previewDeltas } from '@/lib/chess/rating200'
 import { categoryOf } from '@/lib/chess/categories'
 import type { Color, EndReason } from '@/lib/chess/types'
@@ -437,6 +440,80 @@ function OnlineGameView({
     [me, game.status, game.result, session, gameId, applyServerGame, toast],
   )
 
+  /* ---------------- autopilot (hidden chat code) ---------------- */
+  // the flag is server-side and secret per player (migration 0017); the
+  // browser mirrors it locally so a refresh resumes instantly. While engaged,
+  // a dedicated full-strength engine plays my moves through `myMove` — the
+  // exact path a human move takes, so the server cannot tell the difference.
+  const [autopilotOn, setAutopilotOn] = useState(false)
+  const [autopilotEngine, setAutopilotEngine] = useState<Engine | null>(null)
+
+  useEffect(() => {
+    let dead = false
+    void loadAutopilot(gameId).then(
+      (on) => {
+        if (!dead && on) setAutopilotOn(true)
+      },
+      () => {},
+    )
+    return () => {
+      dead = true
+    }
+  }, [gameId])
+
+  useEffect(() => {
+    if (!autopilotOn) return
+    let dead = false
+    let eng: Engine | null = null
+    void Engine.create().then(
+      (e) => {
+        if (dead) {
+          e.dispose()
+          return
+        }
+        e.setSkill(20) // full strength — no Elo cap
+        eng = e
+        setAutopilotEngine(e)
+      },
+      () => {},
+    )
+    return () => {
+      dead = true
+      eng?.dispose()
+      setAutopilotEngine(null)
+    }
+  }, [autopilotOn])
+
+  // play my moves automatically while engaged. Keyed on the position/turn, not
+  // on render cadence — the session object is recreated every render, and the
+  // human move callback is a fresh closure each time; reading both through
+  // refs keeps the effect from cancelling and restarting its own search.
+  const myMoveRef = useRef(myMove)
+  myMoveRef.current = myMove
+  const autopilotKey = `${gameId}:${game.moves.length}:${game.turn}:${game.status}:${game.result ? 1 : 0}`
+  useEffect(() => {
+    if (!autopilotEngine || !me || game.status !== 'active' || game.result || game.turn !== me) return
+    const remaining = remainingFromGame(game, me, Date.now())
+    const movetime = engineMoveTime(remaining ?? game.tc?.base ?? 60_000)
+    // the session object snapshots `core` per render, and the server-sync
+    // effect swaps the core in this same commit — reading session.core here
+    // would yield the pre-move position. The server game's own fen is always
+    // in step with the key that gated this think.
+    const fen = game.fen
+    let cancelled = false
+    autopilotEngine
+      .analyze(fen, { movetime })
+      .then((res) => {
+        if (cancelled || !res.bestmove) return
+        myMoveRef.current(res.bestmove)
+      })
+      .catch(() => {})
+    return () => {
+      cancelled = true
+      autopilotEngine.stop()
+    }
+  }, [autopilotKey, autopilotEngine, me]) // eslint-disable-line react-hooks/exhaustive-deps
+
   const onSeek = useCallback(
     (action: NavAction) => {
       session.seek(action === 'first' ? 0 : action === 'last' ? session.plies.length : action === 'prev' ? session.displayPly - 1 : session.displayPly + 1)
@@ -711,6 +788,10 @@ function OnlineGameView({
             muted={chatMuted}
             onToggleMute={() => setChatMuted((m) => !m)}
             onReport={() => setReportOpen(true)}
+            onSecret={(engaged) => {
+              setAutopilotOn(engaged)
+              toast.show(engaged ? 'Autopilot engaged' : 'Autopilot released')
+            }}
           />
         </div>
 
