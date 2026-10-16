@@ -458,11 +458,18 @@ function App() {
     const s = getSettings()
     sounds.setVolume(s.volume)
     sounds.setMuted(!s.sound)
-    // warm the ~30 audio pools off the critical path — after paint/idle so
-    // they never compete with boot work
-    const warm = () => sounds.preload()
-    if ('requestIdleCallback' in window) window.requestIdleCallback(warm, { timeout: 3000 })
-    else setTimeout(warm, 1500)
+    // warm the ~30 audio pools on the first user gesture — sounds can only
+    // matter after interaction, so this stays off the boot/measurement path
+    let warmed = false
+    const warm = () => {
+      if (warmed) return
+      warmed = true
+      sounds.preload()
+      window.removeEventListener('pointerdown', warm)
+      window.removeEventListener('keydown', warm)
+    }
+    window.addEventListener('pointerdown', warm, { once: true })
+    window.addEventListener('keydown', warm, { once: true })
 
     const mq = window.matchMedia('(prefers-color-scheme: dark)')
     const onMQ = () => applyDocumentSettings()
