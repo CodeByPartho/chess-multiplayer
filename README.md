@@ -1,6 +1,6 @@
 <div align="center">
 
-  <h1>♟️ FreeChess</h1>
+ <h1>FreeChess</h1>
 
   <p><b>Real-time multiplayer chess platform with in-browser Stockfish WASM analysis</b></p>
 
@@ -21,7 +21,7 @@
 
 ---
 
-## 📖 Overview
+## Overview
 
 **FreeChess** is a modern chess web application designed for instant, zero-friction play. Featuring anonymous one-click lobby generation, server-authoritative move validation via Postgres Row-Level Security, and instant state synchronization using Supabase Realtime channels.
 
@@ -29,7 +29,7 @@ Post-game evaluation runs entirely inside your browser using **Stockfish 19 comp
 
 ---
 
-## 📸 Interface Preview
+## Interface Preview
 
 <table align="center">
   <tr>
@@ -48,18 +48,18 @@ Post-game evaluation runs entirely inside your browser using **Stockfish 19 comp
 
 ---
 
-## 🚀 Key Features
+## Key Features
 
-- ⚡ **Zero-Friction Matchmaking** — Create or join a private game in seconds with anonymous sign-ins; no signup walls or credit cards.
-- 🔄 **Supabase Realtime Synchronization** — Sub-second move broadcasting, draw offers, resignations, and disconnect tracking via WebSocket channels.
-- 🧠 **Client-Side Stockfish WASM** — Runs Stockfish 19 locally in a dedicated Web Worker for evaluation curves, blunder indicators, and suggested moves.
-- 🛡️ **Server-Enforced Game Integrity** — All moves validated via `chess.js` and secured by Supabase Postgres Row-Level Security (RLS) policies.
-- 🎨 **Responsive Glassmorphic UI** — Fully responsive design adapted for desktop, tablet, and mobile with custom piece sets and audio synthesis.
-- 🧪 **Comprehensive Test Suite** — Unit test coverage with Vitest and end-to-end browser automation with Playwright.
+- **Direct Matchmaking** — Create or join a private game in seconds with anonymous sign-ins; no signup walls or credit cards.
+- **Supabase Realtime Synchronization** — Sub-second move broadcasting, draw offers, resignations, and disconnect tracking via WebSocket channels.
+- **Client-Side Stockfish WASM** — Runs Stockfish 19 locally in a dedicated Web Worker for evaluation curves, blunder indicators, and suggested moves.
+- **Server-Enforced Game Integrity** — All moves validated via `chess.js` and secured by Supabase Postgres Row-Level Security (RLS) policies.
+- **Responsive Glassmorphic UI** — Fully responsive design adapted for desktop, tablet, and mobile with custom piece sets and audio synthesis.
+- **Comprehensive Test Suite** — Unit test coverage with Vitest and end-to-end browser automation with Playwright.
 
 ---
 
-## 🛠️ Tech Stack
+## Tech Stack
 
 | Component | Technology | Purpose |
 | :--- | :--- | :--- |
@@ -73,7 +73,7 @@ Post-game evaluation runs entirely inside your browser using **Stockfish 19 comp
 
 ---
 
-## 💻 Getting Started
+## Getting Started
 
 ### Prerequisites
 - **Node.js**: `>= 20.x`
@@ -117,10 +117,10 @@ Post-game evaluation runs entirely inside your browser using **Stockfish 19 comp
 
 ---
 
-## 📄 License
+## License
 
 This project is licensed under the **[MIT License](LICENSE)**.
 
 ---
 
-<p align="center">Made with ❤️ by Partho</p>
+<p align="center">Built by Partho</p>
