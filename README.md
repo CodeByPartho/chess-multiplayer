@@ -5,7 +5,7 @@
   <p><b>Real-time multiplayer chess platform with in-browser Stockfish WASM analysis</b></p>
 
   <p>
-    An ad-free, friction-less web chess platform built with React 19, TypeScript, Vite, Supabase Realtime, and client-side Stockfish neural evaluation. Start a game in two clicks with no signup wall.
+    An ad-free, friction-less web chess platform built with React 19, TypeScript, Vite, Supabase Realtime, and client-side Stockfish system evaluation. Start a game in two clicks with no signup wall.
   </p>
 
   <p>
