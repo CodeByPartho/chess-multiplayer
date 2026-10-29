@@ -16,3 +16,7 @@ supabase/.branches/
 
 # Local Netlify folder
 .netlify
+
+*.tsbuildinfo
+.DS_Store
+Thumbs.db
