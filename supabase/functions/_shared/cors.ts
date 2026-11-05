@@ -16,6 +16,7 @@ const ALLOWED_ORIGINS = new Set([
 ])
 const DEFAULT_ORIGIN = 'https://playfreechess.netlify.app'
 
+/** CORS headers for a request: reflect the Origin only when allowlisted. */
 export function corsHeaders(req?: Request): Record<string, string> {
   const origin = req?.headers.get('origin') ?? ''
   return {
@@ -29,6 +30,7 @@ export function corsHeaders(req?: Request): Record<string, string> {
 // Static default (production origin) for any legacy call site.
 export const CORS_HEADERS: Record<string, string> = corsHeaders()
 
+/** JSON response carrying this request's CORS headers. */
 export function json(req: Request, body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), {
     status,
@@ -36,6 +38,7 @@ export function json(req: Request, body: unknown, status = 200): Response {
   })
 }
 
+/** Error response of the form { error: message } with CORS headers. */
 export function bad(req: Request, message: string, status = 400): Response {
   return json(req, { error: message }, status)
 }
