@@ -84,7 +84,7 @@ export default function PuzzleRushPage() {
     return (
       <div style={{ maxWidth: 560, margin: '0 auto' }}>
         <div className="card">
-          <h2>🏃 Puzzle rush</h2>
+          <h2>Puzzle rush</h2>
           <p style={{ color: 'var(--text-dim)', fontSize: 14.5 }}>
             Five minutes on the clock. Solve as many mate-in-ones as you can — easiest first, getting harder as you go. A
             wrong move costs you the puzzle (the answer is shown, then the next one starts). Your best score is saved on
@@ -92,8 +92,8 @@ export default function PuzzleRushPage() {
           </p>
           <div style={{ display: 'flex', gap: 10, alignItems: 'center', marginBottom: 14, flexWrap: 'wrap' }}>
             <span className="chip">⏱ 5:00</span>
-            <span className="chip">📈 {queue.length} puzzles queued</span>
-            <span className="chip">🏅 best: {best}</span>
+            <span className="chip">{queue.length} puzzles queued</span>
+            <span className="chip">best: {best}</span>
           </div>
           <button className="btn btn-primary btn-lg btn-block" onClick={start}>
             Start rush
