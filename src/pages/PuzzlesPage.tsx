@@ -302,7 +302,7 @@ function PuzzleSolve({
           <span className="chip">{modeLabel}</span>
           <b style={{ fontSize: 15.5 }}>{puzzle.title}</b>
           <span className="hint">
-            {mySide === 'w' ? '⬜ White' : '⬛ Black'} to move · ~{puzzle.rating}
+            {mySide === 'w' ? <><span className="side-chip w" /> White</> : <><span className="side-chip b" /> Black</>} to move · ~{puzzle.rating}
           </span>
           <button className="btn btn-sm btn-ghost" style={{ marginLeft: 'auto' }} onClick={onExit}>
             ← Exit

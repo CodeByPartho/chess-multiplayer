@@ -667,10 +667,10 @@ function AnalyzeView({
             <div className="rb-title">Game review{recordLabel ? ` — ${recordLabel}` : ''}</div>
             <div className="accuracy-row">
               <span>
-                ⬜ White accuracy <b>{result.accuracy.w}%</b>
+                <span className="side-chip w" /> White accuracy <b>{result.accuracy.w}%</b>
               </span>
               <span>
-                ⬛ Black accuracy <b>{result.accuracy.b}%</b>
+                <span className="side-chip b" /> Black accuracy <b>{result.accuracy.b}%</b>
               </span>
               {mistakeCount > 0 && (
                 <span style={{ color: 'var(--danger-2)' }}>

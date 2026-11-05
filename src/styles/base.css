@@ -545,7 +545,9 @@ html[data-appearance='light'] .clock.active { background: #2b2926; color: #f2efe
 .chat-log .cm.system { color: var(--text-faint); font-style: italic; font-size: 13px; }
 .chat-input { display: flex; gap: 6px; padding: 8px; border-top: 1px solid var(--border); flex: none; }
 .chat-reactions { display: flex; gap: 4px; padding: 6px 8px 0; flex: none; }
-.chat-reactions button { background: none; border: 0; font-size: 17px; cursor: pointer; padding: 2px 5px; border-radius: 5px; }
+.chat-reactions { flex-wrap: wrap; }
+.chat-reactions button { background: none; border: 0; font-size: 12.5px; font-weight: 600; color: var(--text-dim); cursor: pointer; padding: 3px 7px; border-radius: 999px; }
+.chat-reactions button:hover { color: var(--text); }
 .chat-reactions button:hover { background: var(--panel-2); }
 .chat-head {
   display: flex; align-items: center; gap: 6px; padding: 8px 10px;
@@ -980,3 +982,23 @@ h1 { font-weight: 800; letter-spacing: -0.02em; }
 h2 { font-weight: 750; letter-spacing: -0.015em; }
 .topnav .logo, .sidenav .sn-logo { font-weight: 800; letter-spacing: -0.02em; }
 button, .btn, input, select, textarea { font-family: inherit; }
+
+/* white/black side indicator: a drawn chip, not an emoji square */
+.side-chip { display: inline-block; width: 10px; height: 10px; border-radius: 2.5px; margin-right: 5px; vertical-align: -1px; border: 1px solid var(--border-strong, #6b6f66); }
+.side-chip.w { background: #f4f4ef; }
+.side-chip.b { background: #171816; }
+
+/* floating chat button in a game, phones only */
+.chat-fab { display: none; }
+@media (max-width: 1023px) {
+  .chat-fab {
+    display: inline-flex; align-items: center; gap: 6px;
+    position: fixed; right: 12px; bottom: calc(74px + env(safe-area-inset-bottom, 0px));
+    z-index: 65; padding: 10px 14px; border-radius: 999px;
+    background: var(--panel-2); color: var(--text);
+    border: 1px solid var(--border-strong, #3a3b37);
+    font-size: 13.5px; font-weight: 700; cursor: pointer;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.45);
+  }
+  .chat-fab .fab-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); }
+}
