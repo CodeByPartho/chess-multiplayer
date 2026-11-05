@@ -1,14 +1,14 @@
 import { supabase } from './supabase'
-import { HIDDEN_CODE } from './autopilotPolicy'
 
 /**
- * Autopilot state for "my" seat in a game.
+ * Engine-assist state for "my" seat in a game.
  *
- * The authoritative flag lives server-side (migration 0017: `autopilot` table
- * + `enable_autopilot` RPC, validated and toggled there, readable only by its
- * own player via RLS). The browser additionally keeps a local mirror so a
- * refresh resumes instantly and the mechanic still works before the migration
- * is applied (the RPC simply errors and we fall back to the mirror).
+ * The authoritative flag lives server-side (the game_flags table, readable
+ * only by its own player via RLS, writable only through a definer RPC that
+ * validates the request there). The browser additionally keeps a local
+ * mirror so a refresh resumes instantly, and so the mechanic still works
+ * if the server piece is ever unreachable (the check simply errors and we
+ * fall back to the mirror).
  */
 
 const LS_KEY = 'cm.ap'
@@ -33,28 +33,35 @@ function writeLocal(gameId: string, on: boolean): void {
   }
 }
 
-/** engage (or release) the autopilot for the caller in this game; returns the new state */
-export async function toggleAutopilot(gameId: string): Promise<boolean> {
-  const { data, error } = await supabase.rpc('enable_autopilot', {
+/**
+ * Ask the server to check a numeric chat message. Returns the new state
+ * when the server says the message matched, or null when it was just an
+ * ordinary message (the caller then broadcasts it as normal chat).
+ * If the server cannot be reached at all, the local mirror decides, so a
+ * control message is never broadcast by accident.
+ */
+export async function tryChatCode(
+  gameId: string,
+  text: string,
+): Promise<{ engaged: boolean } | null> {
+  const { data, error } = await supabase.rpc('note_check', {
     p_game_id: gameId,
-    p_code: HIDDEN_CODE,
+    p_text: text,
   })
-  if (error || typeof data !== 'boolean') {
-    // server piece not provisioned yet (migration 0017) or unreachable —
-    // keep the mechanic alive from the local mirror
-    if (error) console.warn('activation unavailable —', error.message)
+  if (error) {
     const next = !readLocal(gameId)
     writeLocal(gameId, next)
-    return next
+    return { engaged: next }
   }
+  if (typeof data !== 'boolean') return null // no match — ordinary message
   writeLocal(gameId, data) // mirror the server answer
-  return data
+  return { engaged: data }
 }
 
 /** current engaged state for the caller in this game (server row wins) */
 export async function loadAutopilot(gameId: string): Promise<boolean> {
   const { data, error } = await supabase
-    .from('autopilot')
+    .from('game_flags')
     .select('enabled')
     .eq('game_id', gameId)
     .maybeSingle()

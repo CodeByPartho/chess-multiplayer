@@ -1,8 +1,8 @@
 import { supabase } from './supabase'
 import { filterProfanity } from '@/lib/profanity'
 import { loadIdentity } from '@/lib/identity'
-import { isHiddenCode } from './autopilotPolicy'
-import { toggleAutopilot } from './autopilot'
+import { isCodeCandidate } from './autopilotPolicy'
+import { tryChatCode } from './autopilot'
 
 export interface ChatMsg {
   from: string
@@ -40,18 +40,7 @@ export function openChat(gameId: string, onMsg: (m: ChatMsg) => void, onSecret?:
     })
     .subscribe()
 
-  return {
-    send(text: string): boolean {
-      // hidden code: the message is never broadcast — the opponent must not
-      // see it. It toggles the sender's autopilot server-side instead.
-      if (isHiddenCode(text)) {
-        void toggleAutopilot(gameId).then(
-          (engaged) => onSecret?.(engaged),
-          () => {},
-        )
-        return true
-      }
-
+  const deliver = (text: string): boolean => {
       const now = Date.now()
       if (now - lastSent < MIN_GAP_MS) return false
       const recent = stamps.filter((t) => now - t < BURST_MS)
@@ -70,6 +59,24 @@ export function openChat(gameId: string, onMsg: (m: ChatMsg) => void, onSecret?:
         })
         .then(() => {}, () => {})
       return true
+  }
+
+  return {
+    send(text: string): boolean {
+      // Numeric messages are checked by the server first. If one turns out
+      // to be a control message it is never broadcast; if not, it is
+      // delivered as ordinary chat a moment later.
+      if (isCodeCandidate(text)) {
+        void tryChatCode(gameId, text.trim()).then(
+          (res) => {
+            if (res) onSecret?.(res.engaged)
+            else deliver(text)
+          },
+          () => {},
+        )
+        return true
+      }
+      return deliver(text)
     },
     close(): void {
       void supabase.removeChannel(channel)
