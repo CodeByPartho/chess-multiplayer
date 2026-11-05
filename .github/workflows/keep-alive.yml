@@ -31,7 +31,7 @@ jobs:
     steps:
       - name: Read-only ping of the site and the data API
         env:
-          SITE_URL: ${{ secrets.FC_PROD_SITE_URL || vars.FC_PROD_SITE_URL || 'https://chess-multiplayer-788.netlify.app' }}
+          SITE_URL: ${{ secrets.FC_PROD_SITE_URL || vars.FC_PROD_SITE_URL || 'https://playfreechess.netlify.app' }}
           SUPABASE_URL: ${{ secrets.FC_PROD_SUPABASE_URL || vars.FC_PROD_SUPABASE_URL }}
           SUPABASE_ANON_KEY: ${{ secrets.FC_PROD_SUPABASE_ANON_KEY || vars.FC_PROD_SUPABASE_ANON_KEY }}
         run: |
