@@ -1,4 +1,5 @@
 import { useRef } from 'react'
+import { IconCamera, IconDice } from '@/components/icons'
 import { Avatar } from '@/components/Avatar'
 import { HISTORICAL_AVATARS, historicalAvatarUrl } from '@/assets/avatars'
 import { uuid } from '@/lib/identity'
@@ -43,7 +44,7 @@ export function AvatarPicker({
                 onClick={() => fileRef.current?.click()}
                 aria-label="Upload avatar"
               >
-                {uploadBusy ? 'Uploading…' : '📷 Upload a photo'}
+                {uploadBusy ? 'Uploading…' : <><IconCamera size={15} /> Upload a photo</>}
               </button>
               <input
                 ref={fileRef}
@@ -59,7 +60,7 @@ export function AvatarPicker({
             </>
           )}
           <button className="btn btn-sm" type="button" onClick={() => onSeed(uuid())} aria-label="Shuffle avatar">
-            🎲 Generate
+            <IconDice size={15} /> Generate
           </button>
         </div>
       </div>

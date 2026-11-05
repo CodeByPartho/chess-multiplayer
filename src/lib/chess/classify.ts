@@ -117,7 +117,7 @@ export const CLASS_INFO: Record<ClassLabel, { icon: string; color: string; label
   best: { icon: '★', color: '#81b64c', label: 'Best' },
   excellent: { icon: '✓', color: '#81b64c', label: 'Excellent' },
   good: { icon: '✓', color: '#95b776', label: 'Good' },
-  book: { icon: '📖', color: '#a88865', label: 'Book' },
+  book: { icon: '≡', color: '#a88865', label: 'Book' },
   inaccuracy: { icon: '?!', color: '#f0c15c', label: 'Inaccuracy' },
   mistake: { icon: '?', color: '#e58f2a', label: 'Mistake' },
   miss: { icon: '↔', color: '#e58f2a', label: 'Miss' },
