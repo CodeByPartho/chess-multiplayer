@@ -618,7 +618,7 @@ function AnalyzeView({
     ? result.evals[s.displayPly] ?? null
     : live?.lines[0]?.score ?? null
 
-  const bestArrow = live?.best && !review.running ? [{ from: live.best.slice(0, 2), to: live.best.slice(2, 4), color: 'rgba(92, 156, 214, 0.75)' }] : []
+  const bestArrow = live?.best && !review.running ? [{ from: live.best.slice(0, 2), to: live.best.slice(2, 4), color: 'rgba(174, 241, 53, 0.8)' }] : []
 
   const mistakeCount = result
     ? result.classes.filter((c) => c === 'blunder' || c === 'mistake' || c === 'miss').length

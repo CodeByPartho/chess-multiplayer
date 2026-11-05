@@ -574,10 +574,13 @@ export function Board({
     const color = a.color ?? 'var(--arrow)'
     return (
       <g key={`${a.from}${a.to}${i}`} className={isHint ? 'hint' : undefined} opacity={0.85}>
+        <line x1={sx} y1={sy} x2={ex} y2={ey} stroke="rgba(19,21,3,0.35)" strokeWidth={0.24} />
         <line x1={sx} y1={sy} x2={ex} y2={ey} stroke={color} strokeWidth={0.16} className="arrow-line" style={{ stroke: color }} />
         <polygon
           points={`${tipX},${tipY} ${ex + px * headW},${ey + py * headW} ${ex - px * headW},${ey - py * headW}`}
           fill={color}
+          stroke="rgba(19,21,3,0.35)"
+          strokeWidth={0.03}
           style={{ fill: color }}
         />
       </g>
