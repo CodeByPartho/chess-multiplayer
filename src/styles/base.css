@@ -34,7 +34,7 @@
   --hl-check: radial-gradient(ellipse at center, rgba(231, 0, 0, 0.85) 0%, rgba(231, 0, 0, 0.55) 45%, rgba(231, 0, 0, 0) 72%);
   --dot: rgba(19, 21, 3, 0.28);
   --ring: rgba(19, 21, 3, 0.28);
-  --arrow: rgba(174, 241, 53, 0.8);
+  --arrow: rgba(174, 241, 53, 0.9);
 
   /* board pixel size — overwritten at runtime by the Board resize observer
      (snapped down to a multiple of 8 so every square is whole pixels) */
@@ -100,6 +100,7 @@ a:hover { text-decoration: underline; }
 img { -webkit-user-drag: none; user-select: none; }
 button { font-family: inherit; }
 :focus-visible { outline: 2px solid var(--accent-2); outline-offset: 2px; }
+html[data-appearance='light'] :focus-visible { outline-color: #3f6212; }
 
 /* ============ app shell: top nav (mobile) ============ */
 .topnav {
@@ -268,7 +269,7 @@ html[data-nav='collapsed'] .sidenav .nav-chip { justify-content: center; padding
   transition: transform 0.15s, background 0.15s;
 }
 .toggle .switch.on { background: var(--text); border-color: transparent; }
-.toggle .switch.on::after { transform: translateX(18px); background: #fff; }
+.toggle .switch.on::after { transform: translateX(18px); background: var(--bg); }
 
 .chip {
   display: inline-flex; align-items: center; gap: 6px;
@@ -955,7 +956,8 @@ html[data-nav='collapsed'] .sn-account .acct-btn { justify-content: center; padd
 }
 
 /* ============ comparison strip (home) ============ */
-.compare-grid { display: flex; flex-direction: column; margin-top: 10px; border: 1px solid var(--border); border-radius: var(--radius-sm); overflow: hidden; }
+.compare-grid { display: flex; flex-direction: column; margin-top: 10px; border: 1px solid var(--border); border-radius: var(--radius-sm); overflow-x: auto; }
+.cg-row { min-width: 460px; }
 .cg-row { display: grid; grid-template-columns: 1.6fr 1fr 1fr 1fr; }
 .cg-row > span { padding: 8px 10px; font-size: 13.5px; border-top: 1px solid var(--border); }
 .cg-row:first-child > span { border-top: none; }
