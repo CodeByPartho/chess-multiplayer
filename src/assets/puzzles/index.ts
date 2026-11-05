@@ -13,12 +13,12 @@ export interface Puzzle {
 export const puzzles: Puzzle[] = data as Puzzle[]
 
 export const PUZZLE_THEMES: { id: string; name: string; icon: string }[] = [
-  { id: 'backRank', name: 'Back rank', icon: '🏰' },
-  { id: 'corridor', name: 'Corridor', icon: '🚪' },
-  { id: 'smothered', name: 'Smothered mate', icon: '🐎' },
+  { id: 'backRank', name: 'Back rank', icon: '♜' },
+  { id: 'corridor', name: 'Corridor', icon: '♛' },
+  { id: 'smothered', name: 'Smothered mate', icon: '♞' },
   { id: 'promotion', name: 'Promotion', icon: '♛' },
-  { id: 'ladder', name: 'Ladder mate', icon: '🪜' },
-  { id: 'krEndgame', name: 'King + rook', icon: '♜' },
+  { id: 'ladder', name: 'Ladder mate', icon: '♜♜' },
+  { id: 'krEndgame', name: 'King + rook', icon: '♚♜' },
   { id: 'kqEndgame', name: 'King + queen', icon: '♕' },
 ]
 

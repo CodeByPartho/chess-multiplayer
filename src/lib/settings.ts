@@ -16,7 +16,7 @@ export interface Settings {
 }
 
 export const DEFAULT_SETTINGS: Settings = {
-  appearance: 'dark',
+  appearance: 'system',
   boardTheme: 'graphite',
   pieceSet: 'cburnett',
   coords: true,
