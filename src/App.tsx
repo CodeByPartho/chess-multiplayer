@@ -7,6 +7,7 @@ import { sounds } from './lib/sounds'
 import { Avatar } from './components/Avatar'
 import { AuthModal } from './components/AuthModal'
 import { OnboardingModal } from './components/OnboardingModal'
+import { IconBlocks, IconBot, IconChart, IconGear, IconKey, IconMedal, IconRepeat, IconTrophy } from './components/icons'
 import { useAuth, signOutEverywhere } from './net/auth'
 import { fetchMyProfile, type ProfileRow } from './net/profileClient'
 import { fetchRatingFor } from './net/ratingsClient'
@@ -44,23 +45,23 @@ function applyDocumentSettings() {
 }
 
 /** desktop / mobile navigation entries */
-const SIDE_LINKS: { to: string; label: string; icon: string }[] = [
+const SIDE_LINKS: { to: string; label: string; icon: ReactNode }[] = [
   { to: '/play', label: 'Play', icon: '♟' },
-  { to: '/puzzles', label: 'Puzzles', icon: '🧩' },
-  { to: '/analysis', label: 'Analysis', icon: '📊' },
-  { to: '/computer', label: 'Computer', icon: '🤖' },
-  { to: '/passandplay', label: 'Pass & Play', icon: '🔁' },
-  { to: '/leaderboard', label: 'Leaderboards', icon: '🏆' },
-  { to: '/settings', label: 'Settings', icon: '⚙️' },
-  { to: '/credits', label: 'Credits', icon: '🏅' },
+  { to: '/puzzles', label: 'Puzzles', icon: <IconBlocks /> },
+  { to: '/analysis', label: 'Analysis', icon: <IconChart /> },
+  { to: '/computer', label: 'Computer', icon: <IconBot /> },
+  { to: '/passandplay', label: 'Pass & Play', icon: <IconRepeat /> },
+  { to: '/leaderboard', label: 'Leaderboards', icon: <IconTrophy /> },
+  { to: '/settings', label: 'Settings', icon: <IconGear /> },
+  { to: '/credits', label: 'Credits', icon: <IconMedal /> },
 ]
 
-const TAB_LINKS: { to: string; label: string; icon: string }[] = [
+const TAB_LINKS: { to: string; label: string; icon: ReactNode }[] = [
   { to: '/play', label: 'Play', icon: '♟' },
-  { to: '/computer', label: 'Computer', icon: '🤖' },
-  { to: '/puzzles', label: 'Puzzles', icon: '🧩' },
-  { to: '/analysis', label: 'Analysis', icon: '📊' },
-  { to: '/settings', label: 'Settings', icon: '⚙️' },
+  { to: '/computer', label: 'Computer', icon: <IconBot /> },
+  { to: '/puzzles', label: 'Puzzles', icon: <IconBlocks /> },
+  { to: '/analysis', label: 'Analysis', icon: <IconChart /> },
+  { to: '/settings', label: 'Settings', icon: <IconGear /> },
 ]
 
 /** desktop left navigation (collapsible) */
@@ -226,7 +227,7 @@ function AccountChip() {
         </Link>
         <button className="btn btn-primary btn-sm nav-signin" onClick={() => setModal(true)} aria-label="Sign in">
           <span className="ns-icon" aria-hidden="true">
-            🔑
+            <IconKey size={15} />
           </span>
           <span className="ns-label">Sign in</span>
         </button>
@@ -291,7 +292,6 @@ class ErrorBoundary extends Component<{ children: ReactNode }, { error: Error | 
     if (this.state.error) {
       return (
         <div className="center-page">
-          <div style={{ fontSize: 40 }}>💥</div>
           <h2 style={{ margin: 0 }}>Something went wrong</h2>
           <p style={{ color: 'var(--text-dim)', maxWidth: 440, textAlign: 'center' }}>
             {this.state.error.message || 'Unexpected error'} — reloading usually fixes it.
@@ -421,7 +421,7 @@ function Footer() {
 /** per-route document title (SEO hygiene + share previews) */
 function useDocumentTitle(path: string) {
   useEffect(() => {
-    let title = 'FreeChess — play chess online, free, no signup'
+    let title = 'FreeChess - play chess online, free, no signup'
     if (path.startsWith('/@')) title = `${decodeURIComponent(path.slice(2))} · FreeChess`
     else if (path === '/leaderboard') title = 'Leaderboards · FreeChess'
     else if (path === '/login') title = 'Sign in · FreeChess'
