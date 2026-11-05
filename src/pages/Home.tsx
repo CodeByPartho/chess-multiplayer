@@ -138,15 +138,15 @@ export default function Home() {
               <span role="columnheader">Lichess</span>
             </div>
             {[
-              ['Full engine game review', 'Free', 'Paywalled', 'Free'],
+              ['Full engine game review', 'Free', 'Limited free', 'Free'],
               ['Ads', 'None', 'Yes', 'None'],
-              ['Play with no account', 'Yes', 'No', 'Yes'],
-              ['Takebacks (casual games)', 'Yes', 'No', 'Yes'],
+              ['Play with no account', 'Yes', 'Yes', 'Yes'],
+              ['Takebacks (casual games)', 'Yes', 'Daily only', 'Yes'],
               ['Premoves', 'Yes', 'Yes', 'Yes'],
               ['Puzzles and Puzzle Rush', 'Free', 'Limited free', 'Free'],
             ].map(([label, us, cc, li]) => (
               <div className="cg-row" role="row" key={label}>
-                <span className="cg-label" role="cell">{label}</span>
+                <span className="cg-label" role="rowheader">{label}</span>
                 <span className="cg-us" role="cell">{us}</span>
                 <span role="cell">{cc}</span>
                 <span role="cell">{li}</span>
