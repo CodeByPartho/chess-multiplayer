@@ -223,7 +223,7 @@
   color: var(--text);
   text-align: left;
 }
-.theme-card:hover { border-color: var(--accent); background: var(--panel-3); }
+.theme-card:hover { border-color: var(--text-faint); background: var(--panel-3); }
 .theme-card .tc-icon { font-size: 22px; }
 
 /* hint arrow pulse */
@@ -262,7 +262,7 @@
 .pv-line .pv-depth { color: var(--text-faint); font-size: 11.5px; }
 
 .progress { height: 6px; background: var(--panel-3); border-radius: 3px; overflow: hidden; }
-.progress > div { height: 100%; background: var(--accent); transition: width 0.15s linear; }
+.progress > div { height: 100%; background: var(--text); transition: width 0.15s linear; }
 
 .accuracy-row { display: flex; gap: 14px; align-items: center; font-size: 14px; flex-wrap: wrap; }
 .accuracy-row b { font-family: var(--mono); }
@@ -277,7 +277,7 @@
   font-size: 13px;
   cursor: pointer;
 }
-.book-move:hover { color: var(--text); border-color: var(--accent); }
+.book-move:hover { color: var(--text); border-color: var(--text-faint); }
 
 .opening-chip { display: flex; align-items: center; gap: 6px; font-size: 12.5px; color: var(--text-dim); }
 .opening-chip .eco { font-family: var(--mono); font-size: 11px; color: var(--text-faint); }
@@ -301,7 +301,7 @@
   justify-content: center;
   padding: 2px;
 }
-.editor-palette .ep-piece.selected { border-color: var(--accent); background: var(--panel-3); }
+.editor-palette .ep-piece.selected { border-color: var(--text); background: var(--panel-3); }
 .editor-palette .ep-piece img { width: 90%; height: 90%; }
 
 /* ================= game layout extra ================= */
