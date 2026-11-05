@@ -191,6 +191,18 @@ function OnlineGameView({
   const identity = useMemo(() => loadIdentity(), [])
 
   const [flipped, setFlipped] = useState(false)
+
+  // 'f' flips the board (ignored while typing in chat or a form field)
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== 'f' && e.key !== 'F') return
+      const t = e.target as HTMLElement | null
+      if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable)) return
+      setFlipped((v) => !v)
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [])
   const [chatMuted, setChatMuted] = useState(false)
   const [sideTab, setSideTab] = useState<'moves' | 'chat'>('moves')
   const [reportOpen, setReportOpen] = useState(false)
@@ -786,7 +798,7 @@ function OnlineGameView({
             <button className="btn btn-sm" onClick={() => setShowPgn(true)}>
               PGN
             </button>
-            <button className="btn btn-sm" onClick={() => setFlipped((f) => !f)} title="Flip board">
+            <button className="btn btn-sm" onClick={() => setFlipped((f) => !f)} title="Flip board (F)">
               ⇅ Flip
             </button>
           </div>

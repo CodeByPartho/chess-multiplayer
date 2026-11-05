@@ -180,6 +180,19 @@ function ComputerGame({
   const [evalScore, setEvalScore] = useState<Score | null>(null)
   const [hint, setHint] = useState<{ from: string; to: string } | null>(null)
   const [confirmResign, setConfirmResign] = useState(false)
+  const [flipped, setFlipped] = useState(false)
+
+  // 'f' flips the board (ignored while typing in a form field)
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== 'f' && e.key !== 'F') return
+      const t = e.target as HTMLElement | null
+      if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable)) return
+      setFlipped((v) => !v)
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [])
   const savedRef = useRef(false)
   const evalJobRef = useRef(0)
   const engineJobRef = useRef(0)
@@ -328,8 +341,8 @@ function ComputerGame({
   }
 
   const caps = useMemo(() => capturedPieces(s.core.startFen, s.displayFen), [s.core.startFen, s.displayFen])
-  const bottomColor = setup.userColor
-  const topColor = engineColor
+  const bottomColor = flipped ? engineColor : setup.userColor
+  const topColor = flipped ? setup.userColor : engineColor
 
   const stripFor = (color: 'w' | 'b', top: boolean) => {
     const isEngine = color === engineColor
@@ -356,7 +369,7 @@ function ComputerGame({
     )
   }
 
-  const arrows = hint ? [{ from: hint.from, to: hint.to, color: 'rgba(92, 156, 214, 0.85)' }] : []
+  const arrows = hint ? [{ from: hint.from, to: hint.to, color: 'rgba(174, 241, 53, 0.85)' }] : []
 
   return (
     <div className="game-layout">
@@ -429,6 +442,9 @@ function ComputerGame({
                 </Link>
               </>
             )}
+            <button className="btn btn-sm" onClick={() => setFlipped((f) => !f)} title="Flip board (F)">
+              ⇅ Flip
+            </button>
             <button className="btn btn-sm btn-ghost" onClick={onBack}>
               New opponent
             </button>
