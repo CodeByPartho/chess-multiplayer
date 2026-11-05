@@ -11,7 +11,7 @@ const ALLOWED_ORIGINS = new Set([
   'http://localhost:5173',
   'http://localhost:3000',
 ])
-const DEFAULT_ORIGIN = 'https://chess-multiplayer-788.netlify.app'
+const DEFAULT_ORIGIN = 'https://playfreechess.netlify.app'
 
 export function corsHeaders(req?: Request): Record<string, string> {
   const origin = req?.headers.get('origin') ?? ''
