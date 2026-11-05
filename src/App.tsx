@@ -13,6 +13,7 @@ import { fetchMyProfile, type ProfileRow } from './net/profileClient'
 import { fetchRatingFor } from './net/ratingsClient'
 import { takeUpgradeNotice } from './net/auth'
 import { onlineEnabled } from './net/supabase'
+import './styles/fonts.css'
 import './styles/base.css'
 import './styles/board.css'
 
