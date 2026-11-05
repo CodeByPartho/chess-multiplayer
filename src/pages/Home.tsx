@@ -125,6 +125,37 @@ export default function Home() {
           </div>
         )}
 
+        <section className="card compare" aria-label="How FreeChess compares">
+          <h3 style={{ fontSize: 16, marginBottom: 4 }}>Everything the big sites do. No paywall, no ads.</h3>
+          <p style={{ color: 'var(--text-dim)', fontSize: 13.5, marginTop: 0 }}>
+            The features Chess.com saves for paying members are simply free here.
+          </p>
+          <div className="compare-grid" role="table">
+            <div className="cg-row cg-head" role="row">
+              <span role="columnheader"></span>
+              <span role="columnheader" className="cg-us">FreeChess</span>
+              <span role="columnheader">Chess.com</span>
+              <span role="columnheader">Lichess</span>
+            </div>
+            {[
+              ['Full engine game review', 'Free', 'Paywalled', 'Free'],
+              ['Ads', 'None', 'Yes', 'None'],
+              ['Play with no account', 'Yes', 'No', 'Yes'],
+              ['Takebacks (casual games)', 'Yes', 'No', 'Yes'],
+              ['Premoves', 'Yes', 'Yes', 'Yes'],
+              ['Puzzles and Puzzle Rush', 'Free', 'Limited free', 'Free'],
+            ].map(([label, us, cc, li]) => (
+              <div className="cg-row" role="row" key={label}>
+                <span className="cg-label" role="cell">{label}</span>
+                <span className="cg-us" role="cell">{us}</span>
+                <span role="cell">{cc}</span>
+                <span role="cell">{li}</span>
+              </div>
+            ))}
+          </div>
+          <p className="hint" style={{ marginBottom: 0 }}>Based on the public free tiers of each site, November 2026.</p>
+        </section>
+
         <Link to="/credits" className="btn btn-ghost btn-sm" style={{ alignSelf: 'center' }}>
           Credits & licenses
         </Link>
