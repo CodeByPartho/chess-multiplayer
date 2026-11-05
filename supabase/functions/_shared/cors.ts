@@ -10,6 +10,9 @@ const ALLOWED_ORIGINS = new Set([
   'https://chess-multiplayer-788.netlify.app',
   'http://localhost:5173',
   'http://localhost:3000',
+  // Playwright e2e: the test app is served on 5199 (playwright.config.ts)
+  // and calls the test project's functions from that origin.
+  'http://localhost:5199',
 ])
 const DEFAULT_ORIGIN = 'https://playfreechess.netlify.app'
 
