@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { IconKey } from '@/components/icons'
 import { useRoute, Link } from '@/router'
 import { handleCallbackCode } from '@/components/AuthPanel'
 import { takeUpgradeNotice } from '@/net/auth'
@@ -75,7 +76,7 @@ export default function AuthCallback() {
     return (
       <div className="center-page">
         <div className="card auth-card">
-          <div style={{ fontSize: 40 }}>🔐</div>
+          <div style={{ color: 'var(--text-dim)' }}><IconKey size={36} /></div>
           <h1 style={{ margin: '4px 0' }}>{closeHint ? 'You’re signed in!' : 'Sign-in didn’t finish'}</h1>
           <p className="auth-note">{closeHint ? 'You can close this window.' : error}</p>
           <div className="auth-row" style={{ justifyContent: 'center' }}>

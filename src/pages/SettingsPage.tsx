@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { IconFlag } from '@/components/icons'
 import { useSettings, updateSettings } from '@/lib/settings'
 import { loadIdentity, saveIdentity, validateUsername, flagOptions, type GuestIdentity } from '@/lib/identity'
 import { AvatarPicker } from '@/components/AvatarPicker'
@@ -103,7 +104,7 @@ export default function SettingsPage() {
         />
         <div style={{ display: 'flex', gap: 10, alignItems: 'center', margin: '10px 0 14px' }}>
           <button className="btn btn-sm" onClick={() => setFlagOpen((v) => !v)}>
-            {identity.flag ? `${identity.flag} Change flag` : '🏳 Add flag'}
+            {identity.flag ? `${identity.flag} Change flag` : <><IconFlag size={14} /> Add flag</>}
           </button>
         </div>
 

@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { IconUser } from '@/components/icons'
 import { Link } from '@/router'
 import { AvatarPicker } from '@/components/AvatarPicker'
 import { Confirm } from '@/components/Modal'
@@ -256,7 +257,7 @@ export default function AccountPage() {
     return (
       <div className="center-page">
         <div className="card auth-card">
-          <div style={{ fontSize: 38 }}>👤</div>
+          <div style={{ color: 'var(--text-dim)' }}><IconUser size={36} /></div>
           <h1 style={{ margin: '4px 0' }}>You’re playing as a guest</h1>
           <p className="auth-note">
             Create an account to pick a username, appear on leaderboards, keep your rating across
