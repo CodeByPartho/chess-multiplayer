@@ -1,8 +1,8 @@
 /* ============ design tokens ============ */
 :root {
   color-scheme: dark;
-  --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-  --mono: ui-monospace, 'Cascadia Mono', 'Consolas', 'Menlo', monospace;
+  --font: 'Archivo', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  --mono: 'IBM Plex Mono', ui-monospace, 'Cascadia Mono', 'Consolas', 'Menlo', monospace;
 
   --bg: #111210;
   --bg-2: #0c0d0c;
@@ -974,3 +974,9 @@ html[data-nav='collapsed'] .sn-account .acct-btn { justify-content: center; padd
   .compare { min-width: 0; }
   .compare-grid { max-width: 100%; }
 }
+
+/* type treatment: tight, heavy headings give the UI its own voice */
+h1 { font-weight: 800; letter-spacing: -0.02em; }
+h2 { font-weight: 750; letter-spacing: -0.015em; }
+.topnav .logo, .sidenav .sn-logo { font-weight: 800; letter-spacing: -0.02em; }
+button, .btn, input, select, textarea { font-family: inherit; }
