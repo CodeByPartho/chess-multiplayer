@@ -5,7 +5,7 @@ import { setMatchPrefs } from '@/lib/matchPrefs'
 import { loadHistory, resultForMe } from '@/lib/history'
 import { load, save } from '@/lib/storage'
 import { Modal } from '@/components/Modal'
-import { IconBlocks, IconBolt, IconBot, IconChart, IconClock, IconFlame, IconTarget, IconUsers } from '@/components/icons'
+import { IconBlocks, IconBolt, IconChart, IconClock, IconCpu, IconFlame, IconTarget, IconUsers } from '@/components/icons'
 
 const SECTIONS: { type: TCType; label: string; icon: ReactNode }[] = [
   { type: 'bullet', label: 'Bullet', icon: <IconBolt size={14} /> },
@@ -75,7 +75,7 @@ export default function Home() {
 
       <div className="home-actions">
         <Link to="/computer" className="action-card">
-          <span className="ac-icon"><IconBot size={22} /></span>
+          <span className="ac-icon"><IconCpu size={22} /></span>
           <span>
             <span className="ac-title">Play vs computer</span>
             <span className="ac-sub">20 levels, personalities, hints & takebacks</span>

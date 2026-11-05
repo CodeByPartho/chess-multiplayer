@@ -7,7 +7,7 @@ import { sounds } from './lib/sounds'
 import { Avatar } from './components/Avatar'
 import { AuthModal } from './components/AuthModal'
 import { OnboardingModal } from './components/OnboardingModal'
-import { IconBlocks, IconBot, IconChart, IconGear, IconKey, IconMedal, IconRepeat, IconTrophy } from './components/icons'
+import { IconBlocks, IconChart, IconCpu, IconKey, IconMedal, IconRepeat, IconSliders, IconTrophy } from './components/icons'
 import { useAuth, signOutEverywhere } from './net/auth'
 import { fetchMyProfile, type ProfileRow } from './net/profileClient'
 import { fetchRatingFor } from './net/ratingsClient'
@@ -49,19 +49,19 @@ const SIDE_LINKS: { to: string; label: string; icon: ReactNode }[] = [
   { to: '/play', label: 'Play', icon: '♟' },
   { to: '/puzzles', label: 'Puzzles', icon: <IconBlocks /> },
   { to: '/analysis', label: 'Analysis', icon: <IconChart /> },
-  { to: '/computer', label: 'Computer', icon: <IconBot /> },
+  { to: '/computer', label: 'Computer', icon: <IconCpu /> },
   { to: '/passandplay', label: 'Pass & Play', icon: <IconRepeat /> },
   { to: '/leaderboard', label: 'Leaderboards', icon: <IconTrophy /> },
-  { to: '/settings', label: 'Settings', icon: <IconGear /> },
+  { to: '/settings', label: 'Settings', icon: <IconSliders /> },
   { to: '/credits', label: 'Credits', icon: <IconMedal /> },
 ]
 
 const TAB_LINKS: { to: string; label: string; icon: ReactNode }[] = [
   { to: '/play', label: 'Play', icon: '♟' },
-  { to: '/computer', label: 'Computer', icon: <IconBot /> },
+  { to: '/computer', label: 'Computer', icon: <IconCpu /> },
   { to: '/puzzles', label: 'Puzzles', icon: <IconBlocks /> },
   { to: '/analysis', label: 'Analysis', icon: <IconChart /> },
-  { to: '/settings', label: 'Settings', icon: <IconGear /> },
+  { to: '/settings', label: 'Settings', icon: <IconSliders /> },
 ]
 
 /** desktop left navigation (collapsible) */
