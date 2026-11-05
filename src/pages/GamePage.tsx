@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { IconBolt, IconChart } from '@/components/icons'
+import { IconBolt, IconChart, IconChat } from '@/components/icons'
 import { Board } from '@/board/Board'
 import { useGameSession, capturedPieces } from '@/game/useGameSession'
 import { GameCore } from '@/lib/chess/game'
@@ -206,6 +206,8 @@ function OnlineGameView({
     return () => window.removeEventListener('keydown', onKey)
   }, [])
   const [chatMuted, setChatMuted] = useState(false)
+  const [chatPing, setChatPing] = useState(false)
+  const sideRef = useRef<HTMLDivElement>(null)
   const [sideTab, setSideTab] = useState<'moves' | 'chat'>('moves')
   const [reportOpen, setReportOpen] = useState(false)
   const [reportText, setReportText] = useState('')
@@ -622,7 +624,7 @@ function OnlineGameView({
         <div className="chip" style={{ justifyContent: 'space-between', width: 'min(440px, 92vw)' }}>
           <span>You play</span>
           <b>
-            {me === 'w' ? '⬜ White' : '⬛ Black'} · {game.tc?.label} · {game.rated ? 'Rated' : 'Casual'}
+            {me === 'w' ? <><span className="side-chip w" /> White</> : <><span className="side-chip b" /> Black</>} · {game.tc?.label} · {game.rated ? 'Rated' : 'Casual'}
           </b>
         </div>
         <div style={{ display: 'flex', gap: 8, width: 'min(440px, 92vw)' }}>
@@ -674,7 +676,7 @@ function OnlineGameView({
         )}
       </div>
 
-      <div className="game-side" data-tab={sideTab}>
+      <div className="game-side" data-tab={sideTab} ref={sideRef}>
         {conn === 'lost' && (
           <div className="conn-banner lost">Connection lost — reconnecting… Your clock may keep running.</div>
         )}
@@ -811,10 +813,11 @@ function OnlineGameView({
             gameId={gameId}
             muted={chatMuted}
             onToggleMute={() => setChatMuted((m) => !m)}
+            onActivity={() => setChatPing(true)}
             onReport={() => setReportOpen(true)}
             onSecret={(engaged) => {
               setAutopilotOn(engaged)
-              toast.show(engaged ? 'Autopilot engaged' : 'Autopilot released')
+              toast.show(engaged ? 'Engine on' : 'Engine off')
             }}
           />
         </div>
@@ -823,11 +826,33 @@ function OnlineGameView({
           <button className={sideTab === 'moves' ? 'active' : ''} onClick={() => setSideTab('moves')}>
             Moves
           </button>
-          <button className={sideTab === 'chat' ? 'active' : ''} onClick={() => setSideTab('chat')}>
-            Chat
+          <button
+            className={sideTab === 'chat' ? 'active' : ''}
+            onClick={() => {
+              setChatPing(false)
+              setSideTab('chat')
+            }}
+          >
+            Chat{chatPing && sideTab !== 'chat' ? ' •' : ''}
           </button>
         </nav>
       </div>
+
+      {sideTab !== 'chat' && (
+        <button
+          className="chat-fab"
+          onClick={() => {
+            setChatPing(false)
+            setSideTab('chat')
+            requestAnimationFrame(() =>
+              sideRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }),
+            )
+          }}
+        >
+          <IconChat size={17} /> Chat
+          {chatPing && <span className="fab-dot" aria-label="New message" />}
+        </button>
+      )}
 
       {confirmResign && (
         <Confirm

@@ -114,13 +114,13 @@ function ComputerSetup({ onStart }: { onStart: (s: { level: number; userColor: C
           <label>Your color</label>
           <div className="seg">
             <button className={userColor === 'w' ? 'active' : ''} onClick={() => setUserColor('w')}>
-              ⬜ White
+              <span className="side-chip w" /> White
             </button>
             <button className={userColor === 'random' ? 'active' : ''} onClick={() => setUserColor('random')}>
               <IconDice size={14} /> Random
             </button>
             <button className={userColor === 'b' ? 'active' : ''} onClick={() => setUserColor('b')}>
-              ⬛ Black
+              <span className="side-chip b" /> Black
             </button>
           </div>
         </div>

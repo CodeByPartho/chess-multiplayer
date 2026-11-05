@@ -239,7 +239,7 @@ export default function JoinScreen({
             </div>
             <div className="chip" style={{ justifyContent: 'space-between' }}>
               <span>You will play as</span>
-              <b>{view.myColor === 'w' ? '⬜ White' : '⬛ Black'}</b>
+              <b>{view.myColor === 'w' ? <><span className="side-chip w" /> White</> : <><span className="side-chip b" /> Black</>}</b>
             </div>
             {joinError && <p className="error-text" style={{ margin: 0 }}>{joinError}</p>}
             <button className="btn btn-primary btn-lg btn-block" onClick={() => void doJoin()} disabled={joining}>

@@ -223,7 +223,7 @@ export default function PlayPage() {
             <div className="chip" style={{ justifyContent: 'space-between' }}>
               <span>You play</span>
               <b>
-                {invite.playAs === 'w' ? '⬜ White' : '⬛ Black'} · {tc.label} · {rated ? 'Rated' : 'Casual'}
+                {invite.playAs === 'w' ? <><span className="side-chip w" /> White</> : <><span className="side-chip b" /> Black</>} · {tc.label} · {rated ? 'Rated' : 'Casual'}
               </b>
             </div>
             <div style={{ display: 'flex', gap: 8 }}>
@@ -256,13 +256,13 @@ export default function PlayPage() {
               <label>Play as</label>
               <div className="seg">
                 <button className={playAs === 'w' ? 'active' : ''} onClick={() => setPlayAs('w')}>
-                  ⬜ White
+                  <span className="side-chip w" /> White
                 </button>
                 <button className={playAs === 'random' ? 'active' : ''} onClick={() => setPlayAs('random')}>
                   <IconDice size={14} /> Random
                 </button>
                 <button className={playAs === 'b' ? 'active' : ''} onClick={() => setPlayAs('b')}>
-                  ⬛ Black
+                  <span className="side-chip b" /> Black
                 </button>
               </div>
             </div>

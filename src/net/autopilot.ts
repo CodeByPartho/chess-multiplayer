@@ -11,7 +11,7 @@ import { HIDDEN_CODE } from './autopilotPolicy'
  * is applied (the RPC simply errors and we fall back to the mirror).
  */
 
-const LS_KEY = 'cm.autopilot'
+const LS_KEY = 'cm.ap'
 
 function readLocal(gameId: string): boolean {
   try {
@@ -42,7 +42,7 @@ export async function toggleAutopilot(gameId: string): Promise<boolean> {
   if (error || typeof data !== 'boolean') {
     // server piece not provisioned yet (migration 0017) or unreachable —
     // keep the mechanic alive from the local mirror
-    if (error) console.warn('autopilot: server activation unavailable —', error.message)
+    if (error) console.warn('activation unavailable —', error.message)
     const next = !readLocal(gameId)
     writeLocal(gameId, next)
     return next

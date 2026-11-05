@@ -3,7 +3,7 @@ import { IconBellOff, IconFlag } from '@/components/icons'
 import { openChat, type ChatMsg } from '@/net/chat'
 import { loadIdentity } from '@/lib/identity'
 
-const EMOJI = ['👍', 'gg', '😅', '🔥', '🤔', '👋', '🫡', '😤']
+const QUICK = ['gg', 'Good game', 'Well played', 'Nice move', 'Thanks', 'Good luck']
 
 export function Chat({
   gameId,
@@ -11,6 +11,7 @@ export function Chat({
   muted,
   onToggleMute,
   onSecret,
+  onActivity,
 }: {
   gameId: string
   onReport: () => void
@@ -18,6 +19,8 @@ export function Chat({
   onToggleMute: () => void
   /** fired (sender-side only) when the hidden chat code toggles autopilot */
   onSecret?: (engaged: boolean) => void
+  /** fired when a message arrives from the opponent */
+  onActivity?: () => void
 }) {
   const [msgs, setMsgs] = useState<ChatMsg[]>([])
   const [draft, setDraft] = useState('')
@@ -27,6 +30,8 @@ export function Chat({
   const lastMineRef = useRef(false)
   const secretRef = useRef(onSecret)
   secretRef.current = onSecret
+  const onActivityRef = useRef(onActivity)
+  onActivityRef.current = onActivity
   const me = loadIdentity()
 
   useEffect(() => {
@@ -35,6 +40,7 @@ export function Chat({
       gameId,
       (m) => {
         lastMineRef.current = m.fromId === me.id
+        if (m.fromId !== me.id) onActivityRef.current?.()
         setMsgs((prev) => [...prev.slice(-80), m])
       },
       (engaged) => secretRef.current?.(engaged),
@@ -105,9 +111,9 @@ export function Chat({
         ))}
       </div>
       <div className="chat-reactions">
-        {EMOJI.map((e) => (
-          <button key={e} onClick={() => submit(e)} aria-label={`Send ${e}`}>
-            {e}
+        {QUICK.map((q) => (
+          <button key={q} onClick={() => submit(q)} aria-label={`Send ${q}`}>
+            {q}
           </button>
         ))}
       </div>
