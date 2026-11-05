@@ -203,3 +203,22 @@ export const IconEraser = ({ size }: { size?: number }) => (
     <path d="M4 20h16" />
   </I>
 )
+
+export const IconCpu = ({ size }: { size?: number }) => (
+  <I size={size}>
+    <rect x="7" y="7" width="10" height="10" rx="2" />
+    <rect x="10.2" y="10.2" width="3.6" height="3.6" rx="1" />
+    <path d="M9 7V4M15 7V4M9 20v-3M15 20v-3M7 9H4M7 15H4M20 9h-3M20 15h-3" />
+  </I>
+)
+
+export const IconSliders = ({ size }: { size?: number }) => (
+  <I size={size}>
+    <path d="M5 7h9M18 7h1" />
+    <path d="M5 12h3M12 12h7" />
+    <path d="M5 17h11M20 17h-1" />
+    <circle cx="16" cy="7" r="2" />
+    <circle cx="10" cy="12" r="2" />
+    <circle cx="18" cy="17" r="2" />
+  </I>
+)

@@ -1,9 +1,15 @@
 /**
- * Generates original PWA icons (PNG128/512) from a hand-authored pixel-art
- * knight matrix — zero dependencies (node:zlib for deflate + manual CRC32).
- * Deterministic; run via prebuild: node scripts/gen-icons.mjs
+ * Writes the FreeChess app icon (public/icons/icon.svg).
+ *
+ * The mark is the cburnett white knight (the same piece set the board uses)
+ * on a charcoal tile with the brand lime as a base bar. It is a vector file,
+ * drawn once and committed; this script exists so `prebuild` keeps it in
+ * place instead of regenerating the old pixel-art icon it replaces.
+ *
+ * The PNG icons (icon-192.png, icon-512.png) are rendered from this SVG and
+ * committed as static files; re-render them with a browser if the SVG ever
+ * changes. This script never touches them.
  */
-import { deflateSync } from 'node:zlib'
 import { writeFileSync, mkdirSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -11,128 +17,15 @@ import { fileURLToPath } from 'node:url'
 const outDir = join(dirname(fileURLToPath(import.meta.url)), '..', 'public', 'icons')
 mkdirSync(outDir, { recursive: true })
 
-// ---- original pixel art: a knight silhouette on a rounded dark tile ----
-//32x32 grid: '.' empty, '#' knight, 'o' outline/shadow accent
-const ART = `
-................................
-..............####..............
-.............####...............
-............######..............
-...........########.............
-..........##########............
-.........####.#######...........
-........#####..#######..........
-.......######...######..........
-......########..#######.........
-.....############..####.........
-.....###########..####..........
-.....##########...####..........
-......########...#####..........
-......#######....######.........
-.......#####.....######.........
-.......####......######.........
-......#####......######.........
-.....######......######.........
-.....#####.......#####..........
-.....####........####...........
-.....###..........###...........
-....#####........#####..........
-....#######....#######..........
-....##################..........
-....##################..........
-.....##############.............
-......############..............
-.......##########...............
-........########................
-................................
-................................
-`.trim().split('\n')
+const SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="512" height="512">
+  <rect width="64" height="64" rx="14" fill="#161715"/>
+  <g transform="translate(7 4) scale(1.111)" fill="none" fill-rule="evenodd" stroke="#0b0c0b" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5">
+    <path fill="#f4f4ef" d="M22 10c10.5 1 16.5 8 16 29H15c0-9 10-6.5 8-21"/>
+    <path fill="#f4f4ef" d="M24 18c.38 2.91-5.55 7.37-8 9-3 2-2.82 4.34-5 4-1.042-.94 1.41-3.04 0-3-1 0 .19 1.23-1 2-1 0-4.003 1-4-4 0-2 6-12 6-12s1.89-1.9 2-3.5c-.73-.994-.5-2-.5-3 1-1 3 2.5 3 2.5h2s.78-1.992 2.5-3c1 0 1 3 1 3"/>
+    <path fill="#0b0c0b" stroke="none" d="M9.5 25.5a.5.5 0 1 1-1 0 .5.5 0 1 1 1 0m5.433-9.75a.5 1.5 30 1 1-.866-.5.5 1.5 30 1 1 .866.5"/>
+  </g>
+  <rect x="20" y="56" width="24" height="3" rx="1.5" fill="#aef135"/>
+</svg>`
 
-// palette: transparent bg, tile color, knight color, accent
-const PALETTE = {
-  '.': null,
-  '#': [236, 214, 160], // ivory knight
-  o: [236, 214, 160],
-}
-const TILE = [46, 42, 36]
-
-function crc32(buf) {
-  let c
-  const table = []
-  for (let n = 0; n < 256; n++) {
-    c = n
-    for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1
-    table[n] = c >>> 0
-  }
-  let crc = 0xffffffff
-  for (const b of buf) crc = table[(crc ^ b) & 0xff] ^ (crc >>> 8)
-  return (crc ^ 0xffffffff) >>> 0
-}
-
-function chunk(type, data) {
-  const len = Buffer.alloc(4)
-  len.writeUInt32BE(data.length)
-  const t = Buffer.from(type, 'ascii')
-  const crc = Buffer.alloc(4)
-  crc.writeUInt32BE(crc32(Buffer.concat([t, data])))
-  return Buffer.concat([len, t, data, crc])
-}
-
-function renderPng(size) {
-  const scale = size / 32
-  const raw = Buffer.alloc((size * 4 + 1) * size)
-  let off = 0
-  for (let y = 0; y < size; y++) {
-    raw[off++] = 0 // filter: none
-    for (let x = 0; x < size; x++) {
-      const sx = Math.floor(x / scale)
-      const sy = Math.floor(y / scale)
-      const ch = ART[sy]?.[sx] ?? '.'
-      // rounded-corner tile mask
-      const r = 4 * scale
-      const corner = (() => {
-        const dx = x < r ? r - x : x > size - r ? x - (size - r) : 0
-        const dy = y < r ? r - y : y > size - r ? y - (size - r) : 0
-        return dx * dx + dy * dy > r * r
-      })()
-      let rgba = ch === '.' || corner ? [0, 0, 0, 0] : [...TILE, 255]
-      if (ch === '#' || ch === 'o') rgba = [...PALETTE[ch], 255]
-      raw[off++] = rgba[0]
-      raw[off++] = rgba[1]
-      raw[off++] = rgba[2]
-      raw[off++] = rgba[3]
-    }
-  }
-  const ihdr = Buffer.alloc(13)
-  ihdr.writeUInt32BE(size, 0)
-  ihdr.writeUInt32BE(size, 4)
-  ihdr[8] = 8 // bit depth
-  ihdr[9] = 6 // RGBA
-  const png = Buffer.concat([
-    Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]),
-    chunk('IHDR', ihdr),
-    chunk('IDAT', deflateSync(raw, { level: 9 })),
-    chunk('IEND', Buffer.alloc(0)),
-  ])
-  return png
-}
-
-for (const s of [192, 512]) {
-  writeFileSync(join(outDir, `icon-${s}.png`), renderPng(s))
-}
-
-// original SVG icon (maskable-friendly square)
-const cell = 1
-let rects = ''
-ART.forEach((row, y) => {
-  ;[...row].forEach((ch, x) => {
-    if (ch === '#') rects += `<rect x="${x * cell}" y="${y * cell}" width="${cell}" height="${cell}" fill="#ece6a0"/>`
-  })
-})
-const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="512" height="512">
-<rect width="32" height="32" rx="5" fill="#2e2a24"/>
-${rects}
-</svg>
-`
-writeFileSync(join(outDir, 'icon.svg'), svg)
-console.log('icons: icon-192.png, icon-512.png, icon.svg')
+writeFileSync(join(outDir, 'icon.svg'), SVG + '\n')
+console.log('icon.svg written')
