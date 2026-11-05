@@ -6,6 +6,7 @@ export interface BoardTheme {
 }
 
 export const boardThemes: BoardTheme[] = [
+  { id: 'graphite', name: 'Graphite', light: '#e9eae2', dark: '#767f6d' },
   { id: 'classic', name: 'Classic', light: '#f0d9b5', dark: '#b58863' },
   { id: 'blue', name: 'Ocean', light: '#dee3e6', dark: '#8ca2ad' },
   { id: 'green', name: 'Green', light: '#eeeed2', dark: '#769656' },

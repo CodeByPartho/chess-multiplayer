@@ -17,7 +17,7 @@ export interface Settings {
 
 export const DEFAULT_SETTINGS: Settings = {
   appearance: 'dark',
-  boardTheme: 'green',
+  boardTheme: 'graphite',
   pieceSet: 'cburnett',
   coords: true,
   autoQueen: false,
