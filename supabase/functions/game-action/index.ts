@@ -1,7 +1,7 @@
 // Game actions: move, resign, abort, draw, takeback, claim-win, rematch.
 // Server-authoritative: validates legality, clocks and termination.
 import { Chess } from 'npm:chess.js@1.4.0'
-import { CORS_HEADERS, json, bad } from '../_shared/cors.ts'
+import { corsHeaders, json, bad } from '../_shared/cors.ts'
 import {
   colorOf,
   endGame,
@@ -20,24 +20,24 @@ const OPP = (c: 'w' | 'b'): 'w' | 'b' => (c === 'w' ? 'b' : 'w')
 const DISCONNECT_CLAIM_MS = 120_000
 
 Deno.serve(async (req) => {
-  if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS_HEADERS })
-  if (req.method !== 'POST') return bad('method', 405)
+  if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders(req) })
+  if (req.method !== 'POST') return bad(req, 'method', 405)
 
   try {
     const supa = serviceClient()
     const userId = await getUserId(req, supa)
-    if (!userId) return bad('unauthorized', 401)
+    if (!userId) return bad(req, 'unauthorized', 401)
 
     const body = await readJsonLimited(req, 8_192)
-    if (!body) return bad('bad request')
+    if (!body) return bad(req, 'bad request')
     const gameId = String(body.gameId ?? '')
     const action = String(body.action ?? '')
-    if (!gameId || !action) return bad('bad request')
+    if (!gameId || !action) return bad(req, 'bad request')
 
     const game = await loadGame(supa, gameId)
-    if (!game) return bad('game not found', 404)
+    if (!game) return bad(req, 'game not found', 404)
     const me = colorOf(game, userId)
-    if (!me) return bad('not a player in this game', 403)
+    if (!me) return bad(req, 'not a player in this game', 403)
     const opp = OPP(me)
 
     const fresh = async (): Promise<GameRow | null> => loadGame(supa, gameId)
@@ -45,9 +45,9 @@ Deno.serve(async (req) => {
     switch (action) {
       case 'move': {
         const uci = String(body.uci ?? '')
-        if (game.status !== 'active') return bad('game is not active')
-        if (game.result) return bad('game is over')
-        if (game.turn !== me) return bad('not your turn')
+        if (game.status !== 'active') return bad(req, 'game is not active')
+        if (game.result) return bad(req, 'game is over')
+        if (game.turn !== me) return bad(req, 'not your turn')
 
         const chess = replayChess(game)
         let move
@@ -58,7 +58,7 @@ Deno.serve(async (req) => {
             promotion: uci.length > 4 ? uci[4] : undefined,
           })
         } catch {
-          return bad('illegal move', 422)
+          return bad(req, 'illegal move', 422)
         }
 
         const now = Date.now()
@@ -67,7 +67,7 @@ Deno.serve(async (req) => {
           // flagged while trying to move
           const draw = chess.isInsufficientMaterial()
           await endGame(supa, game, draw ? { winner: null, reason: 'insufficient' } : { winner: opp, reason: 'timeout' })
-          return json({ game: await fresh(), flagFell: true })
+          return json(req, { game: await fresh(), flagFell: true })
         }
 
         const inc = Number(game.tc?.inc ?? 0)
@@ -94,65 +94,65 @@ Deno.serve(async (req) => {
         }
         await supa.from('games').update(patch).eq('id', game.id)
         if (term) await endGame(supa, { ...game, ...patch }, term)
-        return json({ game: await fresh() })
+        return json(req, { game: await fresh() })
       }
 
       case 'resign': {
-        if (game.status !== 'active' || game.result) return bad('game is not active')
+        if (game.status !== 'active' || game.result) return bad(req, 'game is not active')
         await endGame(supa, game, { winner: opp, reason: 'resign' })
-        return json({ game: await fresh() })
+        return json(req, { game: await fresh() })
       }
 
       case 'abort': {
-        if (game.result) return bad('game already finished')
-        if (game.moves.length >= 2) return bad('too late to abort — resign instead')
+        if (game.result) return bad(req, 'game already finished')
+        if (game.moves.length >= 2) return bad(req, 'too late to abort — resign instead')
         await endGame(supa, game, { winner: null, reason: 'aborted' }, 'aborted')
-        return json({ game: await fresh() })
+        return json(req, { game: await fresh() })
       }
 
       case 'draw_offer': {
-        if (game.status !== 'active' || game.result) return bad('game is not active')
-        if (game.moves.length < 2) return bad('wait for the game to start')
+        if (game.status !== 'active' || game.result) return bad(req, 'game is not active')
+        if (game.moves.length < 2) return bad(req, 'wait for the game to start')
         if (game.draw_offer === opp) {
           // opponent already offered — accepting
           await endGame(supa, game, { winner: null, reason: 'agreement' })
-          return json({ game: await fresh() })
+          return json(req, { game: await fresh() })
         }
         await supa.from('games').update({ draw_offer: me, updated_at: new Date().toISOString() }).eq('id', game.id)
-        return json({ game: await fresh() })
+        return json(req, { game: await fresh() })
       }
 
       case 'draw_decline': {
-        if (game.draw_offer !== opp) return bad('no offer to decline')
+        if (game.draw_offer !== opp) return bad(req, 'no offer to decline')
         await supa.from('games').update({ draw_offer: null, updated_at: new Date().toISOString() }).eq('id', game.id)
-        return json({ game: await fresh() })
+        return json(req, { game: await fresh() })
       }
 
       case 'takeback_offer': {
-        if (game.status !== 'active' || game.result) return bad('game is not active')
-        if (game.rated) return bad('takebacks are disabled in rated games')
-        if (game.moves.length === 0) return bad('no moves to take back')
+        if (game.status !== 'active' || game.result) return bad(req, 'game is not active')
+        if (game.rated) return bad(req, 'takebacks are disabled in rated games')
+        if (game.moves.length === 0) return bad(req, 'no moves to take back')
         if (game.takeback_offer === opp) {
           // accepted implicitly (they offered first)
-          return doTakeback(supa, game, opp)
+          return doTakeback(req, supa, game, opp)
         }
         await supa.from('games').update({ takeback_offer: me, updated_at: new Date().toISOString() }).eq('id', game.id)
-        return json({ game: await fresh() })
+        return json(req, { game: await fresh() })
       }
 
       case 'takeback_accept': {
-        if (game.takeback_offer !== opp) return bad('no takeback offer')
-        return doTakeback(supa, game, opp)
+        if (game.takeback_offer !== opp) return bad(req, 'no takeback offer')
+        return doTakeback(req, supa, game, opp)
       }
 
       case 'takeback_decline': {
-        if (game.takeback_offer !== opp) return bad('no offer to decline')
+        if (game.takeback_offer !== opp) return bad(req, 'no offer to decline')
         await supa.from('games').update({ takeback_offer: null, updated_at: new Date().toISOString() }).eq('id', game.id)
-        return json({ game: await fresh() })
+        return json(req, { game: await fresh() })
       }
 
       case 'claim_win': {
-        if (game.status !== 'active' || game.result) return bad('game is not active')
+        if (game.status !== 'active' || game.result) return bad(req, 'game is not active')
         const now = Date.now()
 
         // My own flag fell: end it now instead of waiting for the opponent to
@@ -162,7 +162,7 @@ Deno.serve(async (req) => {
           const chess = replayChess(game)
           const draw = chess.isInsufficientMaterial()
           await endGame(supa, game, draw ? { winner: null, reason: 'insufficient' } : { winner: opp, reason: 'timeout' })
-          return json({ game: await fresh() })
+          return json(req, { game: await fresh() })
         }
 
         const oppMs = remainingMs(game, opp, now)
@@ -170,27 +170,27 @@ Deno.serve(async (req) => {
         if (oppMs <= 0) reason = 'timeout'
         else {
           const oppId = game[opp === 'w' ? 'white_id' : 'black_id']
-          if (!oppId) return bad('opponent unknown')
+          if (!oppId) return bad(req, 'opponent unknown')
           const { data: guest } = await supa.from('guests').select('last_seen').eq('id', oppId).maybeSingle()
           const gap = guest ? now - new Date(guest.last_seen).getTime() : Number.POSITIVE_INFINITY
           if (game.turn === opp && gap >= DISCONNECT_CLAIM_MS) reason = 'disconnect'
         }
-        if (!reason) return bad('opponent is still here', 409)
+        if (!reason) return bad(req, 'opponent is still here', 409)
 
         // timeout with insufficient material = draw
         if (reason === 'timeout') {
           const chess = replayChess(game)
           if (chess.isInsufficientMaterial()) {
             await endGame(supa, game, { winner: null, reason: 'insufficient' })
-            return json({ game: await fresh() })
+            return json(req, { game: await fresh() })
           }
         }
         await endGame(supa, game, { winner: me, reason })
-        return json({ game: await fresh() })
+        return json(req, { game: await fresh() })
       }
 
       case 'rematch': {
-        if (!game.result && game.status !== 'aborted') return bad('game is not finished')
+        if (!game.result && game.status !== 'aborted') return bad(req, 'game is not finished')
         const rematch = { ...(game.rematch ?? { w: false, b: false, game_id: null }), [me]: true }
         if (rematch.w && rematch.b && !rematch.game_id) {
           const base = Number(game.tc?.base ?? 300_000)
@@ -212,23 +212,23 @@ Deno.serve(async (req) => {
             })
             .select('id')
             .single()
-          if (error || !created) return bad('rematch failed', 500)
+          if (error || !created) return bad(req, 'rematch failed', 500)
           rematch.game_id = created.id
         }
         await supa.from('games').update({ rematch, updated_at: new Date().toISOString() }).eq('id', game.id)
-        return json({ game: await fresh() })
+        return json(req, { game: await fresh() })
       }
 
       default:
-        return bad('unknown action')
+        return bad(req, 'unknown action')
     }
   } catch (e) {
-    return json({ error: (e as Error).message ?? 'server error' }, 500)
+    return json(req, { error: (e as Error).message ?? 'server error' }, 500)
   }
 })
 
 /** Pop plies back to the requester's turn, restore clocks, return new game. */
-async function doTakeback(supa: ReturnType<typeof serviceClient>, game: GameRow, requester: 'w' | 'b'): Response {
+async function doTakeback(req: Request, supa: ReturnType<typeof serviceClient>, game: GameRow, requester: 'w' | 'b'): Response {
   const n = game.moves.length
   const pop = n >= 2 ? 2 : 1
   const kept = game.moves.slice(0, n - pop)
@@ -257,5 +257,5 @@ async function doTakeback(supa: ReturnType<typeof serviceClient>, game: GameRow,
   void requester
   await supa.from('games').update(patch).eq('id', game.id)
   const updated = await loadGame(supa, game.id)
-  return json({ game: updated })
+  return json(req, { game: updated })
 }
