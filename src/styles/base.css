@@ -1,5 +1,6 @@
 /* ============ design tokens ============ */
 :root {
+  color-scheme: dark;
   --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
   --mono: ui-monospace, 'Cascadia Mono', 'Consolas', 'Menlo', monospace;
 
@@ -52,6 +53,7 @@
 }
 
 html[data-appearance='light'] {
+  color-scheme: light;
   --bg: #f7f3ea;
   --bg-2: #efe9db;
   --panel: #fffdf7;
@@ -340,8 +342,8 @@ html[data-nav='collapsed'] .sidenav .nav-chip { justify-content: center; padding
 }
 .action-card:hover { border-color: var(--text-faint); transform: translateY(-1px); text-decoration: none; }
 .action-card .ac-icon { font-size: 26px; width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; background: var(--panel-3); border-radius: var(--radius-sm); flex: none; }
-.action-card .ac-title { font-weight: 700; font-size: 15.5px; }
-.action-card .ac-sub { font-size: 13px; color: var(--text-dim); margin-top: 2px; }
+.action-card .ac-title { display: block; font-weight: 700; font-size: 15.5px; }
+.action-card .ac-sub { display: block; font-size: 13px; color: var(--text-dim); margin-top: 2px; }
 
 /* ============ game layout ============ */
 .game-layout {
@@ -965,3 +967,10 @@ html[data-nav='collapsed'] .sn-account .acct-btn { justify-content: center; padd
 .cg-row .cg-us { background: var(--panel-2); font-weight: 600; }
 .cg-label { color: var(--text-dim); }
 @media (max-width: 560px) { .cg-row > span { padding: 7px 6px; font-size: 12.5px; } }
+
+/* phones: keep the comparison table inside the card, scroll it in place */
+@media (max-width: 560px) {
+  .cg-row { min-width: 330px; }
+  .compare { min-width: 0; }
+  .compare-grid { max-width: 100%; }
+}
