@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { IconBolt, IconChart } from '@/components/icons'
 import { Board } from '@/board/Board'
 import { useGameSession, capturedPieces } from '@/game/useGameSession'
 import { GameCore } from '@/lib/chess/game'
@@ -682,7 +683,7 @@ function OnlineGameView({
           <div className="result-banner">
             <div className="rb-title">{resultTitle(result, nameOf('w'), nameOf('b'))}</div>
             <div className="rb-sub">
-              {result.winner === null ? '½ – ½' : result.winner === me ? 'You won! 🎉' : 'You lost — rematch?'}
+              {result.winner === null ? '½ – ½' : result.winner === me ? 'You won!' : 'You lost — rematch?'}
               {game.casual_reason === 'farming_limit' && (
                 <span className="rb-farm"> · Rated games vs one opponent are capped at 4 per 24h — this one is casual</span>
               )}
@@ -777,7 +778,7 @@ function OnlineGameView({
                 </button>
                 {canClaimDisconnect && (
                   <button className="btn btn-sm btn-primary" onClick={() => void act('claim_win')} disabled={actionBusy}>
-                    ⚡ Claim win
+                    <IconBolt size={14} /> Claim win
                   </button>
                 )}
               </>
@@ -792,7 +793,7 @@ function OnlineGameView({
                   {game.rematch?.[myColor] ? 'Waiting…' : 'Rematch'}
                 </button>
                 <Link to={`/review/${game.id}`} className="btn btn-sm">
-                  📊 Review
+                  <IconChart size={14} /> Review
                 </Link>
               </>
             )}

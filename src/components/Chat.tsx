@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { IconBellOff, IconFlag } from '@/components/icons'
 import { openChat, type ChatMsg } from '@/net/chat'
 import { loadIdentity } from '@/lib/identity'
 
@@ -88,10 +89,10 @@ export function Chat({
         <span>Chat</span>
         <span style={{ marginLeft: 'auto', display: 'flex', gap: 4 }}>
           <button className="btn btn-sm btn-ghost" onClick={onToggleMute} title="Mute chat">
-            🔕
+            <IconBellOff size={15} />
           </button>
           <button className="btn btn-sm btn-ghost" onClick={onReport} title="Report opponent">
-            🚩
+            <IconFlag size={15} />
           </button>
         </span>
       </div>

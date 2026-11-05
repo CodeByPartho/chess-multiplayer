@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { IconTrophy } from '@/components/icons'
 import { Link } from '@/router'
 import { Avatar } from '@/components/Avatar'
 import { fetchLeaderboard, type LeaderboardRow } from '@/net/profileClient'
@@ -71,12 +72,11 @@ export default function LeaderboardPage() {
           </>
         ) : error ? (
           <div className="empty-state">
-            <div style={{ fontSize: 34 }}>📡</div>
             <p>Couldn’t load the leaderboard — online play may not be configured.</p>
           </div>
         ) : rows.length === 0 ? (
           <div className="empty-state">
-            <div style={{ fontSize: 34 }}>🏆</div>
+            <div style={{ color: 'var(--text-dim)' }}><IconTrophy size={32} /></div>
             <p>
               No ranked {cat} players yet.{' '}
               {auth.isGuest || !auth.user ? (

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { IconEraser } from '@/components/icons'
 import { Chess } from 'chess.js'
 import { Board } from '@/board/Board'
 import { pieceUrl, type PieceColor, type PieceType } from '@/board/pieces'
@@ -276,7 +277,7 @@ function Editor({ initialFen, onAnalyze, loadedGame }: { initialFen: string; onA
                 title="Erase pieces (also right-click)"
                 style={{ fontSize: 18 }}
               >
-                🧽
+                <IconEraser size={17} />
               </button>
             </div>
 
@@ -713,13 +714,13 @@ function AnalyzeView({
               onClick={() => void startReview(s.plies.map((p) => p.uci))}
               disabled={!engine || review.running}
             >
-              {result ? 'Re-review' : '⚡ Full review'}
+              {result ? 'Re-review' : 'Full review'}
             </button>
             <button className="btn btn-sm" onClick={() => setShowPgn(true)}>
               PGN
             </button>
             <button className="btn btn-sm" onClick={() => onOpenEditor(s.displayFen)}>
-              🧽 Editor
+              Editor
             </button>
           </div>
 

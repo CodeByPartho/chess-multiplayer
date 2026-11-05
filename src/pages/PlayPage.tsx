@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { IconBolt, IconDice, IconUsers } from '@/components/icons'
 import { Link, useRoute } from '@/router'
 import { QUICK_TIME_CONTROLS, type TimeControl } from '@/lib/chess/types'
 import { getMatchPrefs, setMatchPrefs } from '@/lib/matchPrefs'
@@ -171,10 +172,10 @@ export default function PlayPage() {
     <div style={{ maxWidth: 640, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 12 }}>
       <div className="seg" role="tablist" aria-label="Play mode" style={{ alignSelf: 'center' }}>
         <button className={tab === 'quick' ? 'active' : ''} onClick={() => setTab('quick')} role="tab">
-          ⚡ Quick pairing
+          <IconBolt size={15} /> Quick pairing
         </button>
         <button className={tab === 'friend' ? 'active' : ''} onClick={() => setTab('friend')} role="tab">
-          🤝 Play a friend
+          <IconUsers size={15} /> Play a friend
         </button>
       </div>
 
@@ -258,7 +259,7 @@ export default function PlayPage() {
                   ⬜ White
                 </button>
                 <button className={playAs === 'random' ? 'active' : ''} onClick={() => setPlayAs('random')}>
-                  🎲 Random
+                  <IconDice size={14} /> Random
                 </button>
                 <button className={playAs === 'b' ? 'active' : ''} onClick={() => setPlayAs('b')}>
                   ⬛ Black

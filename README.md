@@ -2,10 +2,10 @@
 
  <h1>FreeChess</h1>
 
-  <p><b>Real-time multiplayer chess platform with in-browser Stockfish WASM analysis</b></p>
+  <p><b>Multiplayer chess in the browser, with Stockfish analysis built in</b></p>
 
   <p>
-    An ad-free, friction-less web chess platform built with React 19, TypeScript, Vite, Supabase Realtime, and client-side Stockfish system evaluation. Start a game in two clicks with no signup wall.
+    I built FreeChess because every big chess site either wants a subscription or shows ads. Here you open the page and play. No account needed, nothing to pay for. React 19, TypeScript, Vite, Supabase Realtime, and Stockfish running in your browser.
   </p>
 
   <p>
@@ -23,9 +23,11 @@
 
 ## Overview
 
-**FreeChess** is a modern chess web application designed for instant, zero-friction play. Featuring anonymous one-click lobby generation, server-authoritative move validation via Postgres Row-Level Security, and instant state synchronization using Supabase Realtime channels.
+FreeChess is a chess site I built and run on my own. You can play online against other people, against the computer at 20 levels, or pass-and-play on one device. Online games are created from the lobby in a couple of clicks. You play as a guest by default; an account is only there if you want a permanent username and rating.
 
-Post-game evaluation runs entirely inside your browser using **Stockfish 19 compiled to WebAssembly (WASM)** executed in a background Web Worker, delivering deep engine evaluation, blunder detection, and best-move arrows with zero cloud API latency or subscriptions.
+Moves are checked on the server side, not just in the browser tab. Game state lives in Postgres, moves go through Supabase Edge Functions that validate them with chess.js, and Row-Level Security policies keep players from touching games that are not theirs. Realtime channels carry the moves, chat, draw offers and rematch requests between the two players.
+
+After a game you can review it with **Stockfish 19 compiled to WebAssembly**, running in a Web Worker in your own browser. It marks blunders and mistakes, shows the best line, and draws the best-move arrow. The same review on Chess.com is limited on the free plan. Here there is no plan.
 
 ---
 
@@ -35,13 +37,13 @@ Post-game evaluation runs entirely inside your browser using **Stockfish 19 comp
   <tr>
     <td align="center" width="50%">
       <img src="screenshots/game-1920x1080-white.png" width="420" alt="Live Match Board" /><br /><br />
-      <b>Live Multiplayer Match</b><br />
-      <sub>Real-time clocks, move history, captured pieces & piece legal highlighting</sub>
+      <b>Live game</b><br />
+      <sub>Clocks, move list, captured pieces, legal-move dots</sub>
     </td>
     <td align="center" width="50%">
       <img src="screenshots/analysis-1920x1080-black.png" width="420" alt="Engine Analysis Board" /><br /><br />
-      <b>In-Browser Stockfish Engine Analysis</b><br />
-      <sub>WASM evaluation bar, principal variation lines, best-move arrows & depth tracking</sub>
+      <b>Analysis board</b><br />
+      <sub>Eval bar, engine lines, best-move arrow, opening explorer</sub>
     </td>
   </tr>
 </table>
@@ -50,12 +52,13 @@ Post-game evaluation runs entirely inside your browser using **Stockfish 19 comp
 
 ## Key Features
 
-- **Direct Matchmaking** — Create or join a private game in seconds with anonymous sign-ins; no signup walls or credit cards.
-- **Supabase Realtime Synchronization** — Sub-second move broadcasting, draw offers, resignations, and disconnect tracking via WebSocket channels.
-- **Client-Side Stockfish WASM** — Runs Stockfish 19 locally in a dedicated Web Worker for evaluation curves, blunder indicators, and suggested moves.
-- **Server-Enforced Game Integrity** — All moves validated via `chess.js` and secured by Supabase Postgres Row-Level Security (RLS) policies.
-- **Responsive Glassmorphic UI** — Fully responsive design adapted for desktop, tablet, and mobile with custom piece sets and audio synthesis.
-- **Comprehensive Test Suite** — Unit test coverage with Vitest and end-to-end browser automation with Playwright.
+- **Play in seconds.** Pick a time control and you are in a game. Guest play by default, private links for playing a friend.
+- **Online play** on Supabase Realtime: moves, chat, draw offers, takebacks in casual games, rematches, and disconnect detection.
+- **Stockfish in the browser.** Stockfish 19 (WASM) in a Web Worker powers the analysis board, hints, and the full game review with blunder detection.
+- **Server-checked moves.** Edge Functions validate every move with `chess.js`; Postgres RLS policies protect the game rows.
+- **Puzzles.** Daily puzzle, rated practice sets, and a 5-minute puzzle rush, all generated and verified with the rules engine.
+- **Works on phones.** Responsive layout, seven board themes, piece sets, and synthesized move sounds. No app install.
+- **Tests.** Vitest unit tests plus a Playwright end-to-end suite that plays full games between two browser contexts.
 
 ---
 
@@ -63,13 +66,13 @@ Post-game evaluation runs entirely inside your browser using **Stockfish 19 comp
 
 | Component | Technology | Purpose |
 | :--- | :--- | :--- |
-| **Frontend Framework** | [React 19](https://react.dev) | High-performance reactive UI |
-| **Language** | [TypeScript 5.9](https://www.typescriptlang.org) | End-to-end type safety |
-| **Build Tool** | [Vite 8](https://vite.dev) | Rapid HMR and optimized production bundles |
-| **Chess Engine** | [Stockfish WASM](https://github.com/official-stockfish/Stockfish) & [chess.js](https://github.com/jhlywa/chess.js) | Client-side rules engine & multi-threaded WASM evaluation |
-| **Backend & Realtime** | [Supabase](https://supabase.com) | PostgreSQL database, Auth, and Realtime WebSocket presence |
-| **Hosting & CI/CD** | [Netlify](https://www.netlify.com) & GitHub Actions | Automated edge deployment on push to `main` |
-| **Testing** | [Vitest](https://vitest.dev) & [Playwright](https://playwright.dev) | Unit testing and cross-browser E2E verification |
+| **Frontend Framework** | [React 19](https://react.dev) | UI |
+| **Language** | [TypeScript 5.9](https://www.typescriptlang.org) | Types across the app |
+| **Build Tool** | [Vite 8](https://vite.dev) | Dev server and production build |
+| **Chess Engine** | [Stockfish WASM](https://github.com/official-stockfish/Stockfish) & [chess.js](https://github.com/jhlywa/chess.js) | Rules, move validation, engine evaluation |
+| **Backend & Realtime** | [Supabase](https://supabase.com) | Postgres, Auth, Edge Functions, Realtime |
+| **Hosting & CI/CD** | [Netlify](https://www.netlify.com) & GitHub Actions | Deploys on push to `main` |
+| **Testing** | [Vitest](https://vitest.dev) & [Playwright](https://playwright.dev) | Unit and end-to-end tests |
 
 ---
 

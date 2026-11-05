@@ -1,16 +1,17 @@
-import { useState } from 'react'
+import { useState, type ReactNode } from 'react'
 import { Link, useRoute } from '@/router'
 import { QUICK_TIME_CONTROLS, type TimeControl, type TCType } from '@/lib/chess/types'
 import { setMatchPrefs } from '@/lib/matchPrefs'
 import { loadHistory, resultForMe } from '@/lib/history'
 import { load, save } from '@/lib/storage'
 import { Modal } from '@/components/Modal'
+import { IconBlocks, IconBolt, IconBot, IconChart, IconClock, IconFlame, IconTarget, IconUsers } from '@/components/icons'
 
-const SECTIONS: { type: TCType; label: string; icon: string }[] = [
-  { type: 'bullet', label: 'Bullet', icon: '⚡' },
-  { type: 'blitz', label: 'Blitz', icon: '🔥' },
-  { type: 'rapid', label: 'Rapid', icon: '🎯' },
-  { type: 'classical', label: 'Classical', icon: '⏳' },
+const SECTIONS: { type: TCType; label: string; icon: ReactNode }[] = [
+  { type: 'bullet', label: 'Bullet', icon: <IconBolt size={14} /> },
+  { type: 'blitz', label: 'Blitz', icon: <IconFlame size={14} /> },
+  { type: 'rapid', label: 'Rapid', icon: <IconTarget size={14} /> },
+  { type: 'classical', label: 'Classical', icon: <IconClock size={14} /> },
 ]
 
 export default function Home() {
@@ -59,7 +60,7 @@ export default function Home() {
           </div>
         ))}
         <div className="tc-section">
-          <div className="tc-label">⚙️ Custom</div>
+          <div className="tc-label"><IconClock size={14} /> Custom</div>
           <div className="tc-row">
             <button className="tc-btn" onClick={() => setShowCustom(true)}>
               <span className="tc-time">⏱</span>
@@ -74,28 +75,28 @@ export default function Home() {
 
       <div className="home-actions">
         <Link to="/computer" className="action-card">
-          <span className="ac-icon">🤖</span>
+          <span className="ac-icon"><IconBot size={22} /></span>
           <span>
             <span className="ac-title">Play vs computer</span>
             <span className="ac-sub">20 levels, personalities, hints & takebacks</span>
           </span>
         </Link>
         <Link to="/puzzles" className="action-card">
-          <span className="ac-icon">🧩</span>
+          <span className="ac-icon"><IconBlocks size={22} /></span>
           <span>
             <span className="ac-title">Puzzles</span>
             <span className="ac-sub">Daily puzzle, puzzle rush, themes</span>
           </span>
         </Link>
         <Link to="/analysis" className="action-card">
-          <span className="ac-icon">📊</span>
+          <span className="ac-icon"><IconChart size={22} /></span>
           <span>
             <span className="ac-title">Analysis board</span>
             <span className="ac-sub">Engine, opening explorer, FEN & PGN editor</span>
           </span>
         </Link>
         <Link to="/passandplay" className="action-card">
-          <span className="ac-icon">🤝</span>
+          <span className="ac-icon"><IconUsers size={22} /></span>
           <span>
             <span className="ac-title">Pass &amp; play</span>
             <span className="ac-sub">Two players, one device</span>
@@ -112,7 +113,7 @@ export default function Home() {
                 return (
                   <Link key={g.id} to={`/review/${g.id}`} className="chip" style={{ justifyContent: 'space-between', width: '100%' }}>
                     <span style={{ display: 'flex', gap: 8, alignItems: 'center', minWidth: 0 }}>
-                      <span>{me === 'win' ? '✅' : me === 'loss' ? '❌' : g.result.winner ? '½' : '⏳'}</span>
+                      <span>{me === 'win' ? '✓' : me === 'loss' ? '✕' : g.result.winner ? '½' : '…'}</span>
                       <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{opp.name}</span>
                     </span>
                     <span className="rating" style={{ color: 'var(--text-dim)', fontSize: 12 }}>
@@ -126,9 +127,9 @@ export default function Home() {
         )}
 
         <section className="card compare" aria-label="How FreeChess compares">
-          <h3 style={{ fontSize: 16, marginBottom: 4 }}>Everything the big sites do. No paywall, no ads.</h3>
+          <h3 style={{ fontSize: 16, marginBottom: 4 }}>FreeChess vs Chess.com vs Lichess</h3>
           <p style={{ color: 'var(--text-dim)', fontSize: 13.5, marginTop: 0 }}>
-            The features Chess.com saves for paying members are simply free here.
+            What the free plans actually include. The review and puzzle features Chess.com charges for are free here.
           </p>
           <div className="compare-grid" role="table">
             <div className="cg-row cg-head" role="row">
@@ -153,7 +154,7 @@ export default function Home() {
               </div>
             ))}
           </div>
-          <p className="hint" style={{ marginBottom: 0 }}>Based on the public free tiers of each site, November 2026.</p>
+          <p className="hint" style={{ marginBottom: 0 }}>Checked against each site's public free tier, November 2026.</p>
         </section>
 
         <Link to="/credits" className="btn btn-ghost btn-sm" style={{ alignSelf: 'center' }}>

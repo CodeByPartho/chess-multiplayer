@@ -1,4 +1,5 @@
 import { useMemo, useRef, useState } from 'react'
+import { IconCalendar, IconClock, IconTarget } from '@/components/icons'
 import { Chess } from 'chess.js'
 import { PuzzleBoard } from '@/components/PuzzleBoard'
 import { useToast } from '@/components/Toast'
@@ -55,7 +56,7 @@ export default function PuzzlesPage({ puzzleId }: { puzzleId?: string }) {
     if (!p) {
       return (
         <div className="center-page">
-          <h2>Set complete! 🎉</h2>
+          <h2>Set complete</h2>
           <button className="btn btn-primary" onClick={() => setPractice(null)}>
             Back to puzzles
           </button>
@@ -83,16 +84,16 @@ export default function PuzzlesPage({ puzzleId }: { puzzleId?: string }) {
         <h2 style={{ margin: 0, fontSize: 20 }}>Puzzles</h2>
         <div style={{ display: 'flex', gap: 14, marginLeft: 'auto', fontSize: 13.5, color: 'var(--text-dim)', flexWrap: 'wrap' }}>
           <span>
-            ✅ <b style={{ color: 'var(--text)' }}>{stats.solved}</b> solved
+            <b style={{ color: 'var(--text)' }}>{stats.solved}</b> solved
           </span>
           <span>
-            🔥 streak <b style={{ color: 'var(--text)' }}>{stats.streak}</b> (best {stats.bestStreak})
+            streak <b style={{ color: 'var(--text)' }}>{stats.streak}</b> (best {stats.bestStreak})
           </span>
           <span>
-            🏃 rush best <b style={{ color: 'var(--text)' }}>{stats.rushBest}</b>
+            rush best <b style={{ color: 'var(--text)' }}>{stats.rushBest}</b>
           </span>
           <span>
-            🧩 rating <b style={{ color: 'var(--text)' }}>{identity.ratings.puzzle.rating}</b>
+            rating <b style={{ color: 'var(--text)' }}>{identity.ratings.puzzle.rating}</b>
           </span>
         </div>
       </div>
@@ -130,14 +131,14 @@ export default function PuzzlesPage({ puzzleId }: { puzzleId?: string }) {
           className="action-card"
           onClick={() => setPractice({ queue: practiceSet(identity.ratings.puzzle.rating, 10), idx: 0, label: 'Rated practice' })}
         >
-          <span className="ac-icon">🎯</span>
+          <span className="ac-icon"><IconTarget size={22} /></span>
           <span>
             <span className="ac-title">Rated practice</span>
             <span className="ac-sub">Puzzles around your {identity.ratings.puzzle.rating} rating</span>
           </span>
         </button>
         <button className="action-card" onClick={() => navigate('/puzzles/rush')}>
-          <span className="ac-icon">🏃</span>
+          <span className="ac-icon"><IconClock size={22} /></span>
           <span>
             <span className="ac-title">Puzzle rush</span>
             <span className="ac-sub">5 minutes — how many can you solve?</span>
@@ -165,7 +166,7 @@ function DailyCard({ stats }: { stats: PuzzleStats }) {
 
   return (
     <div className="card" style={{ display: 'flex', gap: 14, alignItems: 'center', flexWrap: 'wrap' }}>
-      <div style={{ fontSize: 34 }}>📅</div>
+      <div style={{ color: 'var(--text-dim)' }}><IconCalendar size={32} /></div>
       <div style={{ minWidth: 0, flex: 1 }}>
         <div style={{ fontWeight: 700, fontSize: 16 }}>{daily.title}</div>
         <div className="hint">
@@ -175,7 +176,7 @@ function DailyCard({ stats }: { stats: PuzzleStats }) {
       </div>
       {done ? (
         <span className="chip" style={{ color: 'var(--success)' }}>
-          ✅ Completed today
+          ✓ Completed today
         </span>
       ) : (
         <button className="btn btn-primary" onClick={() => navigate(`/puzzle/${daily.id}`)}>
@@ -320,7 +321,7 @@ function PuzzleSolve({
       <div className="game-side" data-tab="moves">
         {solved && (
           <div className="result-banner">
-            <div className="rb-title">✅ Solved in {solvedSec.toFixed(1)}s</div>
+            <div className="rb-title">Solved in {solvedSec.toFixed(1)}s</div>
             <div className="rb-sub">
               {wrongCount > 0 ? `${wrongCount} wrong attempt${wrongCount > 1 ? 's' : ''} · ` : 'First try! · '}
               puzzle rating {ratingDelta >= 0 ? `+${ratingDelta}` : ratingDelta}

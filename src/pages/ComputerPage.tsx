@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { IconBulb, IconDice } from '@/components/icons'
 import { Board } from '@/board/Board'
 import { useGameSession, capturedPieces } from '@/game/useGameSession'
 import { useNavKeys, type NavAction } from '@/game/useNavKeys'
@@ -116,7 +117,7 @@ function ComputerSetup({ onStart }: { onStart: (s: { level: number; userColor: C
               ⬜ White
             </button>
             <button className={userColor === 'random' ? 'active' : ''} onClick={() => setUserColor('random')}>
-              🎲 Random
+              <IconDice size={14} /> Random
             </button>
             <button className={userColor === 'b' ? 'active' : ''} onClick={() => setUserColor('b')}>
               ⬛ Black
@@ -402,7 +403,7 @@ function ComputerGame({
           <div className="result-banner">
             <div className="rb-title">{resultTitle(s.result, identity.username, lvl.name)}</div>
             <div className="rb-sub">
-              {s.result.winner === null ? '½ – ½' : s.result.winner === setup.userColor ? 'You won! 🎉' : 'Better luck next time.'}
+              {s.result.winner === null ? '½ – ½' : s.result.winner === setup.userColor ? 'You won!' : 'Better luck next time.'}
             </div>
             {evalScore && (
               <div className="rb-sub mono">Final eval: {formatEval(evalScore)}</div>
@@ -424,7 +425,7 @@ function ComputerGame({
             {!over ? (
               <>
                 <button className="btn btn-sm" onClick={requestHint} disabled={!engine || turn !== setup.userColor}>
-                  💡 Hint
+                  <IconBulb size={15} /> Hint
                 </button>
                 <button className="btn btn-sm" onClick={doTakeback} disabled={s.plies.length === 0}>
                   ↩ Takeback
