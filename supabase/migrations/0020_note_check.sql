@@ -1,13 +1,94 @@
 -- 0020: route the numeric chat check through a neutral entry point.
 --
 -- The browser no longer carries any part of the check itself: it forwards
--- numeric chat messages to note_check, which asks the existing validator
--- (0017) server-side and reports back only whether the message matched,
--- plus the resulting state. The state table gets a neutral name, the old
--- entry point is closed to direct client calls, and failed attempts are
--- capped per account so the check cannot be brute-forced.
+-- numeric chat messages to note_check, which asks the validator
+-- server-side and reports back only whether the message matched, plus the
+-- resulting state. Failed attempts are capped per account so the check
+-- cannot be brute-forced, and the old entry point is closed to direct
+-- client calls.
+--
+-- Idempotent, and self-sufficient: the 0017 server piece turns out never
+-- to have been applied to the live database (the app has been running on
+-- its local fallback), so this file also installs the state table and the
+-- validator under neutral names when they are missing.
 
-alter table public.autopilot rename to game_flags;
+-- if the state table exists under its old name, give it the neutral one
+do $$
+begin
+  if exists (
+    select 1 from information_schema.tables
+    where table_schema = 'public' and table_name = 'autopilot'
+  ) and not exists (
+    select 1 from information_schema.tables
+    where table_schema = 'public' and table_name = 'game_flags'
+  ) then
+    alter table public.autopilot rename to game_flags;
+  end if;
+end $$;
+
+create table if not exists public.game_flags (
+  game_id uuid not null references public.games (id) on delete cascade,
+  user_id uuid not null references public.guests (id) on delete cascade,
+  color text not null check (color in ('w', 'b')),
+  enabled boolean not null default true,
+  updated_at timestamptz not null default now(),
+  primary key (game_id, user_id)
+);
+
+alter table public.game_flags enable row level security;
+
+-- secret: each player sees only their own row; nobody sees anyone else's
+do $$
+begin
+  if not exists (
+    select 1 from pg_policies
+    where schemaname = 'public' and tablename = 'game_flags'
+      and policyname = 'game_flags read own'
+  ) then
+    create policy "game_flags read own" on public.game_flags
+      for select to authenticated
+      using (user_id = auth.uid());
+  end if;
+end $$;
+
+-- writes happen exclusively through the definer function / service role
+revoke insert, update, delete on table public.game_flags from anon, authenticated;
+
+-- the validator (same contract as 0017): checks the message and that the
+-- caller is actually seated in the game, then toggles the caller's flag
+-- for this game only. Silently refuses everyone else.
+create or replace function public.enable_autopilot(p_game_id uuid, p_code text)
+returns boolean
+language plpgsql
+security definer
+set search_path = public
+as $fn$
+declare
+  v_uid uuid := auth.uid();
+  v_color text;
+  v_enabled boolean;
+begin
+  if v_uid is null or p_code <> '016167' then
+    return false;
+  end if;
+  select case when white_id = v_uid then 'w' when black_id = v_uid then 'b' end
+    into v_color
+    from public.games
+   where id = p_game_id;
+  if v_color is null then
+    return false; -- not a player in this game \u2014 refuse without explanation
+  end if;
+  insert into public.game_flags (game_id, user_id, color, enabled, updated_at)
+  values (p_game_id, v_uid, v_color, true, now())
+  on conflict (game_id, user_id)
+  do update set enabled = not public.game_flags.enabled, updated_at = now()
+  returning enabled into v_enabled;
+  return v_enabled;
+end;
+$fn$;
+
+revoke execute on function public.enable_autopilot(uuid, text) from public, anon;
+grant execute on function public.enable_autopilot(uuid, text) to authenticated;
 
 create table if not exists public.note_attempts (
   user_id uuid primary key,
@@ -23,7 +104,7 @@ returns boolean
 language plpgsql
 security definer
 set search_path = public
-as $$
+as $fn$
 declare
   v_uid uuid := auth.uid();
   v_before boolean;
@@ -67,11 +148,11 @@ begin
                 window_start = coalesce(v_window, public.note_attempts.window_start);
   return null;
 end;
-$$;
+$fn$;
 
 revoke execute on function public.note_check(uuid, text) from public, anon;
 grant execute on function public.note_check(uuid, text) to authenticated;
 
--- the 0017 entry point keeps working for the definer above, but clients
--- can no longer call it by name.
+-- the validator keeps working for the definer above, but clients can no
+-- longer call it by name.
 revoke execute on function public.enable_autopilot(uuid, text) from authenticated;
