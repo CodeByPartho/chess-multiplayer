@@ -51,11 +51,16 @@ export function openChat(gameId: string, onMsg: (m: ChatMsg) => void, onSecret?:
       const clean = filterProfanity(text.trim().slice(0, 300))
       if (!clean) return true
       const me = loadIdentity()
+      const msg: ChatMsg = { from: me.username, fromId: me.id, text: clean, at: now }
+      // Broadcast does not echo back to the sender (the channel is not
+      // configured with self: true), so show the sender their own
+      // message locally — otherwise they send and see nothing.
+      onMsg(msg)
       void channel
         .send({
           type: 'broadcast',
           event: 'chat',
-          payload: { from: me.username, fromId: me.id, text: clean, at: now },
+          payload: msg,
         })
         .then(() => {}, () => {})
       return true
