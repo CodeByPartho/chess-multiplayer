@@ -206,15 +206,39 @@ function ComputerGame({
 
   /* ---------------- solo chat + autopilot (hidden) ----------------
    * The chat panel is not part of the normal solo UI: it appears only
-   * after a short key sequence is typed on the page. A digits-only
-   * message in it is checked by the server (0023); on a match a
-   * dedicated full-strength engine plays the user's moves through the
-   * same apply path the computer's own replies use. */
+   * after a short key sequence is typed on the page, or after the
+   * opponent's profile strip is tapped 11 times in a row (the phone
+   * route — there are no key events without a keyboard). The panel
+   * itself is an ordinary-looking chat: regular messages just appear
+   * in the log. A digits-only message is checked by the server (0023);
+   * on a match a dedicated full-strength engine plays the user's moves
+   * through the same apply path the computer's own replies use. */
   const toast = useToast()
   const [chatOpen, setChatOpen] = useState(false)
   const [soloOn, setSoloOn] = useState(false)
   const [soloEngine, setSoloEngine] = useState<Engine | null>(null)
   const seqRef = useRef('')
+  const tapRef = useRef({ count: 0, last: 0 })
+
+  const toggleSoloChat = useCallback(() => {
+    if (onlineEnabled) {
+      // the solo check needs an account; guests get an anonymous one
+      void ensureAuth().catch(() => {})
+    }
+    setChatOpen((v) => !v)
+  }, [])
+
+  /** 11 quick taps on the opponent's profile strip toggle the chat */
+  const onOpponentTap = useCallback(() => {
+    const now = Date.now()
+    const t = tapRef.current
+    t.count = now - t.last <= 1_500 ? t.count + 1 : 1
+    t.last = now
+    if (t.count >= 11) {
+      t.count = 0
+      toggleSoloChat()
+    }
+  }, [toggleSoloChat])
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -225,16 +249,12 @@ function ComputerGame({
       seqRef.current = r.buffer
       if (r.matched) {
         seqRef.current = ''
-        if (onlineEnabled) {
-          // the solo check needs an account; guests get an anonymous one
-          void ensureAuth().catch(() => {})
-        }
-        setChatOpen((v) => !v)
+        toggleSoloChat()
       }
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [])
+  }, [toggleSoloChat])
 
   useEffect(() => {
     let dead = false
@@ -455,6 +475,7 @@ function ComputerGame({
     return (
       <PlayerStrip
         top={top}
+        onTap={isEngine ? onOpponentTap : undefined}
         name={isEngine ? lvl.name : identity.username}
         rating={isEngine ? lvl.elo : identity.ratings.rapid.rating}
         avatarSeed={isEngine ? lvl.name : identity.avatarSeed}

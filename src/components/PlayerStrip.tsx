@@ -27,6 +27,8 @@ export interface PlayerStripProps {
   /** connection indicator */
   connection?: { state: 'ok' | 'grace' | 'lost'; text?: string } | null
   subtitle?: string
+  /** optional tap handler on the whole strip (used by the solo page) */
+  onTap?: () => void
 }
 
 export function PlayerStrip({
@@ -42,13 +44,14 @@ export function PlayerStrip({
   thinking = false,
   connection,
   subtitle,
+  onTap,
 }: PlayerStripProps) {
   const sorted = [...captured].sort((a, b) => ORDER.indexOf(a.type) - ORDER.indexOf(b.type))
   // diff from THIS player's perspective: white player counts black pieces as +
   const diff = captured.length ? materialDiff(captured) : 0
 
   return (
-    <div className={`player-strip ${top ? 'top' : 'bottom'} ${thinking ? 'thinking' : ''} ${active ? 'active' : ''}`}>
+    <div className={`player-strip ${top ? 'top' : 'bottom'} ${thinking ? 'thinking' : ''} ${active ? 'active' : ''}`} onClick={onTap}>
       {avatarSeed !== undefined && <Avatar seed={avatarSeed} size={34} alt="" />}
       <div className="ps-info">
         <div className="ps-name">
