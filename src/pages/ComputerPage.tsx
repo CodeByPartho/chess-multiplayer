@@ -9,7 +9,7 @@ import { MoveList } from '@/components/MoveList'
 import { EvalBar, formatEval } from '@/components/EvalBar'
 import { Confirm } from '@/components/Modal'
 import { Engine, type Score, type Analysis } from '@/engine/engine'
-import { COMPUTER_LEVELS, thinkTimeFor, botPolicyFor } from '@/game/computerLevels'
+import { COMPUTER_LEVELS, thinkTimeFor, botPolicyFor, botAcceptsDraw } from '@/game/computerLevels'
 import { useSettings } from '@/lib/settings'
 import { loadIdentity } from '@/lib/identity'
 import { saveGame } from '@/lib/history'
@@ -427,6 +427,16 @@ function ComputerGame({
       .catch(() => {})
   }
 
+  const offerDraw = () => {
+    if (over || s.plies.length === 0) return
+    if (botAcceptsDraw(evalScore, engineColor)) {
+      s.agreeDraw()
+      toast.show(`${lvl.name} accepts the draw`)
+    } else {
+      toast.show(`${lvl.name} declines the draw`)
+    }
+  }
+
   const doTakeback = () => {
     if (s.plies.length === 0) return
     if (thinking) {
@@ -523,6 +533,9 @@ function ComputerGame({
                 </button>
                 <button className="btn btn-sm" onClick={doTakeback} disabled={s.plies.length === 0}>
                   ↩ Takeback
+                </button>
+                <button className="btn btn-sm" onClick={offerDraw} disabled={s.plies.length === 0}>
+                  ½ Draw
                 </button>
                 <button className="btn btn-sm btn-danger" onClick={() => setConfirmResign(true)}>
                   Resign

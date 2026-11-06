@@ -1,4 +1,4 @@
-// Game actions: move, resign, abort, draw, takeback, claim-win, rematch.
+// Game actions: move, resign, abort, draw, takeback, claim-win, add-time, rematch.
 // Server-authoritative: validates legality, clocks and termination.
 import { Chess } from 'npm:chess.js@1.4.0'
 import { corsHeaders, json, bad } from '../_shared/cors.ts'
@@ -148,6 +148,23 @@ Deno.serve(async (req) => {
       case 'takeback_decline': {
         if (game.takeback_offer !== opp) return bad(req, 'no offer to decline')
         await supa.from('games').update({ takeback_offer: null, updated_at: new Date().toISOString() }).eq('id', game.id)
+        return json(req, { game: await fresh() })
+      }
+
+      case 'add_time': {
+        // Give the opponent 15 more seconds (the chess.com friendly-game
+        // button). The clock model stores the side-to-move's remaining
+        // time in wms/bms as of last_move_at, so when the opponent is the
+        // side to move, bank the elapsed time first (re-anchor
+        // last_move_at) instead of letting the bonus be eaten by the
+        // seconds already spent thinking.
+        if (game.status !== 'active' || game.result) return bad(req, 'game is not active')
+        if (!game.tc) return bad(req, 'untimed game')
+        const now = Date.now()
+        const patch: Record<string, unknown> = { updated_at: new Date(now).toISOString() }
+        patch[opp === 'w' ? 'wms' : 'bms'] = remainingMs(game, opp, now) + 15_000
+        if (game.turn === opp) patch.last_move_at = new Date(now).toISOString()
+        await supa.from('games').update(patch).eq('id', game.id)
         return json(req, { game: await fresh() })
       }
 

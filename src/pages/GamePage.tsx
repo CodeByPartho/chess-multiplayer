@@ -783,6 +783,19 @@ function OnlineGameView({
                     <IconBolt size={14} /> Claim win
                   </button>
                 )}
+                {game.tc && (
+                  <button
+                    className="btn btn-sm"
+                    onClick={() => {
+                      void act('add_time')
+                      toast.show('Added 15 seconds to their clock')
+                    }}
+                    disabled={actionBusy}
+                    title="Give your opponent 15 extra seconds"
+                  >
+                    +15s
+                  </button>
+                )}
               </>
             )}
             {gameOver && (
