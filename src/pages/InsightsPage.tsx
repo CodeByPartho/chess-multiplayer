@@ -132,7 +132,7 @@ export default function InsightsPage() {
 
       <p className="hint" style={{ marginTop: 16 }}>
         Keep going: <Link to="/lessons">lessons</Link> · <Link to="/practice">practice drills</Link> ·{' '}
-        <Link to="/puzzles">puzzles</Link>
+        <Link to="/studies">studies</Link> · <Link to="/puzzles">puzzles</Link>
       </p>
     </div>
   )

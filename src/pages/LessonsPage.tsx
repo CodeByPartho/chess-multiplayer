@@ -231,8 +231,8 @@ export default function LessonsPage() {
           ))}
         </div>
         <p className="hint" style={{ marginTop: 14 }}>
-          Prefer playing? <Link to="/practice">Practice key positions against the engine</Link> or{' '}
-          <Link to="/puzzles">solve puzzles</Link>.
+          Prefer playing? <Link to="/practice">Practice key positions against the engine</Link>,{' '}
+          <Link to="/studies">work through a study</Link> or <Link to="/puzzles">solve puzzles</Link>.
         </p>
       </div>
     )

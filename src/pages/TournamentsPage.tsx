@@ -192,6 +192,11 @@ export default function TournamentsPage() {
           </button>
         </div>
       </div>
+
+      <p className="hint" style={{ marginTop: 14 }}>
+        More ways to compete: <Link to="/leagues">weekly leagues</Link> · <Link to="/simuls">simuls</Link> ·{' '}
+        <Link to="/leaderboard">leaderboards</Link>
+      </p>
     </div>
   )
 }
