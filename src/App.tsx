@@ -52,6 +52,7 @@ const ClubsPage = lazy(() => import('./pages/ClubsPage'))
 const ForumsPage = lazy(() => import('./pages/ForumsPage'))
 const MessagesPage = lazy(() => import('./pages/MessagesPage'))
 const InsightsPage = lazy(() => import('./pages/InsightsPage'))
+const MastersPage = lazy(() => import('./pages/MastersPage'))
 
 function applyDocumentSettings() {
   const s = getSettings()
@@ -302,6 +303,9 @@ function AccountChip() {
             <Link to="/insights" onClick={() => setMenu(false)}>
               Insights
             </Link>
+            <Link to="/masters" onClick={() => setMenu(false)}>
+              The masters
+            </Link>
             <Link to="/leaderboard" onClick={() => setMenu(false)}>
               Leaderboards
             </Link>
@@ -386,6 +390,7 @@ function RouteView() {
   if (path === '/forums') return <ForumsPage />
   if (path === '/messages') return <MessagesPage />
   if (path === '/insights') return <InsightsPage />
+  if (path === '/masters') return <MastersPage />
   if (path === '/analysis') return <AnalysisPage />
   if (path === '/settings') return <SettingsPage />
   if (path === '/credits') return <CreditsPage />
@@ -515,6 +520,7 @@ function useDocumentTitle(path: string) {
     else if (path === '/forums') title = 'Forums · FreeChess'
     else if (path === '/messages' || path.startsWith('/messages/')) title = 'Messages · FreeChess'
     else if (path === '/insights') title = 'Your Chess Insights · FreeChess'
+    else if (path === '/masters') title = 'The Masters · FreeChess'
     else if (path === '/puzzles') title = 'Chess Puzzles · FreeChess'
     else if (path === '/analysis') title = 'Analysis · FreeChess'
     document.title = title

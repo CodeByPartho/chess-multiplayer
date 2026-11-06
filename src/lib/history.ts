@@ -47,8 +47,9 @@ export function getGame(id: string): GameRecord | null {
   return loadHistory().find((g) => g.id === id) ?? null
 }
 
-/** who won from `myColor`'s perspective */
+/** who won from `myColor`'s perspective; a null winner means the game was drawn */
 export function resultForMe(rec: GameRecord): 'win' | 'loss' | 'draw' | null {
-  if (!rec.myColor || !rec.result.winner) return null
+  if (!rec.myColor || !rec.result) return null
+  if (!rec.result.winner) return 'draw'
   return rec.result.winner === rec.myColor ? 'win' : 'loss'
 }

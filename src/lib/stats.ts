@@ -1,5 +1,5 @@
 import { resultForMe, type GameRecord } from './history'
-import { detectOpening } from '@/assets/openings'
+import { detectOpening } from '../assets/openings'
 import type { PuzzleStats } from './puzzleStats'
 
 export interface OpeningStat {
@@ -64,6 +64,85 @@ export function buildInsights(records: GameRecord[], _puzzles: PuzzleStats): Ins
     avgAccuracy: accs.length ? Math.round(accs.reduce((a, b) => a + b, 0) / accs.length) : null,
     reviewed: accs.length,
   }
+}
+
+/* ------------------------------------------------------------------ */
+/* Opening mastery: every recognized line you play, your full record in  */
+/* it, and a level that grows with games played and results held.        */
+
+export interface MasteryEntry {
+  name: string
+  eco: string
+  /** the ECO main line in SAN — the route this mastery belongs to */
+  lineSans: string[]
+  games: number
+  wins: number
+  draws: number
+  losses: number
+  winPct: number
+  /** Rookie → Student → Specialist → Expert → Master */
+  level: string
+  /** games still needed for the next level, null at the top */
+  nextAt: number | null
+  /** ids of your stored games in this line, newest first */
+  gameIds: string[]
+}
+
+const MASTERY_TIERS: { name: string; games: number; winPct: number }[] = [
+  { name: 'Rookie', games: 0, winPct: 0 },
+  { name: 'Student', games: 3, winPct: 0 },
+  { name: 'Specialist', games: 5, winPct: 50 },
+  { name: 'Expert', games: 10, winPct: 55 },
+  { name: 'Master', games: 20, winPct: 60 },
+]
+
+export function masteryLevelFor(games: number, winPct: number): { level: string; nextAt: number | null } {
+  let idx = 0
+  for (let i = 0; i < MASTERY_TIERS.length; i++) {
+    if (games >= MASTERY_TIERS[i].games && winPct >= MASTERY_TIERS[i].winPct) idx = i
+  }
+  const next = MASTERY_TIERS[idx + 1]
+  return { level: MASTERY_TIERS[idx].name, nextAt: next ? next.games : null }
+}
+
+export function buildMastery(records: GameRecord[]): MasteryEntry[] {
+  const byOpening = new Map<string, MasteryEntry>()
+  for (const r of records) {
+    if (!r.myColor) continue
+    const op = detectOpening(r.moves.map((m) => m.san))
+    if (!op) continue
+    const cur =
+      byOpening.get(op.name) ??
+      ({
+        name: op.name,
+        eco: op.eco,
+        lineSans: op.sans,
+        games: 0,
+        wins: 0,
+        draws: 0,
+        losses: 0,
+        winPct: 0,
+        level: 'Rookie',
+        nextAt: null,
+        gameIds: [],
+      } as MasteryEntry)
+    cur.games += 1
+    const res = resultForMe(r)
+    if (res === 'win') cur.wins += 1
+    else if (res === 'draw') cur.draws += 1
+    else cur.losses += 1
+    cur.gameIds.push(r.id)
+    byOpening.set(op.name, cur)
+  }
+  const out = [...byOpening.values()]
+  for (const e of out) {
+    e.winPct = e.games ? Math.round((e.wins / e.games) * 100) : 0
+    const { level, nextAt } = masteryLevelFor(e.games, e.winPct)
+    e.level = level
+    e.nextAt = nextAt
+    e.gameIds.reverse() // records arrive oldest-first; show newest first
+  }
+  return out.sort((a, b) => b.games - a.games || b.winPct - a.winPct)
 }
 
 /* ------------------------------------------------------------------ */

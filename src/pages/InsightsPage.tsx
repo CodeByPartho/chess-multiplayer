@@ -1,10 +1,10 @@
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { Link } from '@/router'
-import { loadHistory } from '@/lib/history'
+import { loadHistory, resultForMe, type GameRecord } from '@/lib/history'
 import { loadPuzzleStats } from '@/lib/puzzleStats'
 import { loadIdentity } from '@/lib/identity'
 import { load } from '@/lib/storage'
-import { buildInsights, ACHIEVEMENTS, type AchievementCtx } from '@/lib/stats'
+import { buildInsights, buildMastery, ACHIEVEMENTS, type AchievementCtx, type MasteryEntry } from '@/lib/stats'
 import { LESSONS } from './LessonsPage'
 import { DRILLS } from './PracticePage'
 
@@ -54,10 +54,13 @@ export default function InsightsPage() {
       stormBest: modeBests.storm ?? 0,
       streakBest: modeBests.streak ?? 0,
     }
-    return { insights, puzzles, ctx }
+    const mastery = buildMastery(records)
+    const byId = new Map(records.map((r) => [r.id, r]))
+    return { insights, puzzles, ctx, mastery, byId }
   }, [])
 
-  const { insights, puzzles, ctx } = data
+  const { insights, puzzles, ctx, mastery, byId } = data
+  const [openLine, setOpenLine] = useState<string | null>(null)
   const identity = loadIdentity()
   const unlockedCount = ACHIEVEMENTS.filter((a) => a.unlocked(ctx)).length
 
@@ -98,6 +101,25 @@ export default function InsightsPage() {
       </div>
 
       <div className="card" style={{ padding: 14, marginBottom: 14 }}>
+        <h3 style={{ margin: '0 0 6px', fontSize: 15 }}>Opening mastery</h3>
+        <p className="hint" style={{ margin: '0 0 10px' }}>
+          The lines you keep returning to are your repertoire. Levels grow with games played and
+          results held: Rookie, Student, Specialist, Expert, Master.{' '}
+          <Link to="/masters">See how the masters play their lines</Link>
+        </p>
+        {mastery.length === 0 && <p className="hint" style={{ margin: 0 }}>No recognized lines yet. Your first mastered route starts with your first games.</p>}
+        {mastery.map((m) => (
+          <MasteryRow
+            key={m.name}
+            entry={m}
+            byId={byId}
+            open={openLine === m.name}
+            onToggle={() => setOpenLine(openLine === m.name ? null : m.name)}
+          />
+        ))}
+      </div>
+
+      <div className="card" style={{ padding: 14, marginBottom: 14 }}>
         <h3 style={{ margin: '0 0 10px', fontSize: 15 }}>Ratings on this device</h3>
         <div style={{ display: 'flex', gap: 18, flexWrap: 'wrap' }}>
           {Object.entries(identity.ratings).map(([pool, r]) => (
@@ -132,8 +154,64 @@ export default function InsightsPage() {
 
       <p className="hint" style={{ marginTop: 16 }}>
         Keep going: <Link to="/lessons">lessons</Link> · <Link to="/practice">practice drills</Link> ·{' '}
-        <Link to="/studies">studies</Link> · <Link to="/puzzles">puzzles</Link>
+        <Link to="/studies">studies</Link> · <Link to="/puzzles">puzzles</Link> ·{' '}
+        <Link to="/masters">the masters</Link>
       </p>
+    </div>
+  )
+}
+
+function MasteryRow({
+  entry,
+  byId,
+  open,
+  onToggle,
+}: {
+  entry: MasteryEntry
+  byId: Map<string, GameRecord>
+  open: boolean
+  onToggle: () => void
+}) {
+  const games = entry.gameIds.map((id) => byId.get(id)).filter((g): g is GameRecord => !!g)
+  return (
+    <div style={{ borderTop: '1px solid var(--border)', padding: '8px 0' }}>
+      <button
+        onClick={onToggle}
+        aria-expanded={open}
+        style={{ width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 10, background: 'none', border: 'none', cursor: 'pointer', color: 'inherit', padding: 0, textAlign: 'left' }}
+      >
+        <span style={{ fontSize: 14 }}>
+          {entry.name} <span className="hint">{entry.eco}</span>{' '}
+          <span className="chip" style={{ marginLeft: 4 }}>{entry.level}</span>
+        </span>
+        <span className="hint" style={{ whiteSpace: 'nowrap' }}>
+          {entry.games} games · {entry.wins}W {entry.draws}D {entry.losses}L · {entry.winPct}% won {open ? '▾' : '▸'}
+        </span>
+      </button>
+      <div className="hint" style={{ marginTop: 2 }}>
+        {entry.nextAt
+          ? `${Math.max(0, entry.nextAt - entry.games)} more games in this line to the next level, results permitting.`
+          : 'Top level. This line is yours.'}
+      </div>
+      {open && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginTop: 8 }}>
+          {games.length === 0 && <span className="hint">Those games are no longer stored on this device.</span>}
+          {games.map((g) => {
+            const opp = g.myColor === 'w' ? g.black : g.white
+            const me = resultForMe(g)
+            return (
+              <Link key={g.id} to={`/review/${g.id}`} className="chip" style={{ justifyContent: 'space-between', width: '100%' }}>
+                <span>
+                  {me === 'win' ? 'Won' : me === 'loss' ? 'Lost' : 'Drew'} vs {opp.name}
+                </span>
+                <span style={{ color: 'var(--text-dim)', fontSize: 12 }}>
+                  {g.tc?.label ?? 'Untimed'} · {new Date(g.date).toLocaleDateString()}
+                </span>
+              </Link>
+            )
+          })}
+        </div>
+      )}
     </div>
   )
 }

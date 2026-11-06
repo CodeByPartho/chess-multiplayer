@@ -10,6 +10,7 @@ import { EvalBar, formatEval } from '@/components/EvalBar'
 import { Confirm } from '@/components/Modal'
 import { Engine, type Score, type Analysis } from '@/engine/engine'
 import { COMPUTER_LEVELS, thinkTimeFor, botPolicyFor, botAcceptsDraw } from '@/game/computerLevels'
+import { CHAMPIONS, bookMoveFor, pickChampionMove } from '@/game/champions'
 import { useSettings } from '@/lib/settings'
 import { loadIdentity } from '@/lib/identity'
 import { saveGame } from '@/lib/history'
@@ -58,19 +59,22 @@ function pickEngineMove(res: Analysis, blunderPct: number): string {
   return res.bestmove ?? ''
 }
 
+export interface ComputerSetupState {
+  level: number
+  championId: string | null
+  userColor: Color
+  tc: TimeControl | null
+}
+
 export default function ComputerPage() {
-  const [setup, setSetup] = useState<{
-    level: number
-    userColor: Color
-    tc: TimeControl | null
-  } | null>(null)
+  const [setup, setSetup] = useState<ComputerSetupState | null>(null)
   const [round, setRound] = useState(0)
 
   if (!setup) return <ComputerSetup onStart={(s) => setSetup(s)} />
 
   return (
     <ComputerGame
-      key={`${round}-${setup.level}-${setup.userColor}-${setup.tc?.label ?? 'u'}`}
+      key={`${round}-${setup.level}-${setup.championId ?? 'lvl'}-${setup.userColor}-${setup.tc?.label ?? 'u'}`}
       setup={setup}
       onBack={() => setSetup(null)}
       onRematch={() => setRound((r) => r + 1)}
@@ -78,22 +82,60 @@ export default function ComputerPage() {
   )
 }
 
-function ComputerSetup({ onStart }: { onStart: (s: { level: number; userColor: Color; tc: TimeControl | null }) => void }) {
+function ComputerSetup({ onStart }: { onStart: (s: ComputerSetupState) => void }) {
   const [level, setLevel] = useState(8)
+  const [championId, setChampionId] = useState<string | null>(null)
   const [userColor, setUserColor] = useState<Color | 'random'>('random')
   const [tc, setTc] = useState<TimeControl | null>({ base: 300_000, inc: 3_000, type: 'blitz', label: '5+3' })
   const lvl = COMPUTER_LEVELS[level - 1]
+  const champ = CHAMPIONS.find((c) => c.id === championId) ?? null
 
   return (
     <div style={{ maxWidth: 760, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 14 }}>
       <div className="card">
         <h2>Play vs computer</h2>
         <p style={{ color: 'var(--text-dim)', fontSize: 14.5, marginTop: -4 }}>
-          Twenty personalities on a ladder from ~200 up to full-strength Stockfish. Hints and
-          takebacks allowed — these games don&apos;t affect your rating.
+          Twenty personalities on a ladder from ~200 up to full-strength Stockfish, or a champion
+          who plays with his own style and opening book. Hints and takebacks allowed in ladder
+          games — these games don&apos;t affect your rating.
         </p>
 
         <div className="field">
+          <label>Face a champion</label>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))', gap: 8 }}>
+            {CHAMPIONS.map((c) => (
+              <button
+                key={c.id}
+                onClick={() => setChampionId(championId === c.id ? null : c.id)}
+                aria-pressed={championId === c.id}
+                style={{
+                  textAlign: 'left',
+                  padding: '10px 12px',
+                  borderRadius: 10,
+                  border: `1px solid ${championId === c.id ? 'var(--accent)' : 'var(--border)'}`,
+                  background: 'var(--bg-soft, transparent)',
+                  cursor: 'pointer',
+                  color: 'inherit',
+                }}
+              >
+                <span style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 8 }}>
+                  <b>{c.name}</b>
+                  <span className="chip">~{c.elo}</span>
+                </span>
+                <span className="hint" style={{ display: 'block', marginTop: 2 }}>{c.title}</span>
+                <span style={{ display: 'block', fontSize: 13, marginTop: 6, color: 'var(--text-dim)' }}>{c.style}</span>
+              </button>
+            ))}
+          </div>
+          <p className="hint" style={{ margin: '8px 0 0' }}>
+            {champ
+              ? `${champ.name} plays at full strength, chooses moves the way he played, and follows his real opening lines. Tap him again to go back to the ladder.`
+              : 'Full-strength engine, bent to a real champion\u2019s taste, with his opening book.'}{' '}
+            <Link to="/masters">See their signature lines</Link>
+          </p>
+        </div>
+
+        <div className="field" style={champ ? { opacity: 0.45, pointerEvents: 'none' } : undefined}>
           <label>Opponent — level {level}</label>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 6 }}>
             <b style={{ fontSize: 17 }}>{lvl.name}</b>
@@ -148,9 +190,16 @@ function ComputerSetup({ onStart }: { onStart: (s: { level: number; userColor: C
 
         <button
           className="btn btn-primary btn-lg btn-block"
-          onClick={() => onStart({ level, userColor: userColor === 'random' ? (Math.random() < 0.5 ? 'w' : 'b') : userColor, tc })}
+          onClick={() =>
+            onStart({
+              level: champ ? 20 : level,
+              championId,
+              userColor: userColor === 'random' ? (Math.random() < 0.5 ? 'w' : 'b') : userColor,
+              tc,
+            })
+          }
         >
-          Start game vs {lvl.name}
+          Start game vs {champ ? champ.name : lvl.name}
         </button>
       </div>
     </div>
@@ -162,13 +211,16 @@ function ComputerGame({
   onBack,
   onRematch,
 }: {
-  setup: { level: number; userColor: Color; tc: TimeControl | null }
+  setup: ComputerSetupState
   onBack: () => void
   onRematch: () => void
 }) {
   const settings = useSettings()
   const identity = useMemo(() => loadIdentity(), [])
   const lvl = COMPUTER_LEVELS[setup.level - 1]
+  const champ = useMemo(() => CHAMPIONS.find((c) => c.id === setup.championId) ?? null, [setup.championId])
+  const oppName = champ?.name ?? lvl.name
+  const oppElo = champ?.elo ?? lvl.elo
   const policy = useMemo(() => botPolicyFor(setup.level), [setup.level])
   const engineColor: Color = setup.userColor === 'w' ? 'b' : 'w'
 
@@ -343,31 +395,57 @@ function ComputerGame({
   // and the reply is applied like any other move; nothing blocks the board.
   // A generation token drops results for positions that no longer stand.
   useEffect(() => {
-    if (!engine || over || turn !== engineColor) {
+    if (over || turn !== engineColor) {
       setThinking(false) // idle path — also clears a search killed by takeback/resign
+      return
+    }
+    // champion book: while the game follows one of his signature lines he
+    // answers from the book, no engine search needed
+    if (champ) {
+      const book = bookMoveFor(champ, s.plies.map((p) => p.san))
+      if (book) {
+        const job = ++engineJobRef.current
+        setThinking(true)
+        const t = window.setTimeout(() => {
+          if (job !== engineJobRef.current || s.over) return
+          setThinking(false)
+          s.applyExternalMove(book)
+        }, 450)
+        return () => {
+          window.clearTimeout(t)
+          engineJobRef.current++
+        }
+      }
+    }
+    if (!engine) {
+      setThinking(false)
       return
     }
     const job = ++engineJobRef.current
     setThinking(true)
     const startedAt = performance.now()
     engine
-      .analyze(fen, {
-        movetime: thinkTimeFor(setup.level),
-        depth: policy.depth,
-        multiPv: policy.weak ? 4 : 1,
-      })
+      .analyze(
+        fen,
+        champ
+          ? { movetime: champ.moveTimeMs, multiPv: 5 }
+          : { movetime: thinkTimeFor(setup.level), depth: policy.depth, multiPv: policy.weak ? 4 : 1 },
+      )
       .then((res) => {
         if (job !== engineJobRef.current) return
-        // low levels take a short human-like beat before replying — a delay
-        // before the move is applied, never a visible loading state
-        const minThink = setup.level <= 3 ? 400 + setup.level * 100 : 0
+        // low levels (and champions, briefly) take a short human-like beat
+        // before replying — a delay before the move is applied, never a
+        // visible loading state
+        const minThink = champ ? 250 : setup.level <= 3 ? 400 + setup.level * 100 : 0
         const wait = Math.max(0, minThink - (performance.now() - startedAt))
         window.setTimeout(() => {
           if (job !== engineJobRef.current) return
           setThinking(false)
           if (!res.bestmove || s.over) return
           requestAnimationFrame(() => {
-            if (job === engineJobRef.current) s.applyExternalMove(pickEngineMove(res, policy.blunderPct))
+            if (job === engineJobRef.current) {
+              s.applyExternalMove(champ ? pickChampionMove(res, champ, fen) : pickEngineMove(res, policy.blunderPct))
+            }
           })
         }, wait)
       })
@@ -377,7 +455,7 @@ function ComputerGame({
     return () => {
       engineJobRef.current++
     }
-  }, [engine, fen, over, turn, engineColor, setup.level, policy]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [engine, fen, over, turn, engineColor, setup.level, policy, champ]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // background eval for the bar (after each move, when idle)
   useEffect(() => {
@@ -422,8 +500,8 @@ function ComputerGame({
       startFen: s.core.startFen,
       moves: s.plies.map((p: Ply) => ({ uci: p.uci, san: p.san })),
       result: s.result,
-      white: { name: setup.userColor === 'w' ? identity.username : lvl.name, rating: setup.userColor === 'w' ? identity.ratings.rapid.rating : lvl.elo, avatarSeed: setup.userColor === 'w' ? identity.avatarSeed : lvl.name, flag: setup.userColor === 'w' ? identity.flag : null },
-      black: { name: setup.userColor === 'b' ? identity.username : lvl.name, rating: setup.userColor === 'b' ? identity.ratings.rapid.rating : lvl.elo, avatarSeed: setup.userColor === 'b' ? identity.avatarSeed : lvl.name, flag: setup.userColor === 'b' ? identity.flag : null },
+      white: { name: setup.userColor === 'w' ? identity.username : oppName, rating: setup.userColor === 'w' ? identity.ratings.rapid.rating : oppElo, avatarSeed: setup.userColor === 'w' ? identity.avatarSeed : oppName, flag: setup.userColor === 'w' ? identity.flag : null },
+      black: { name: setup.userColor === 'b' ? identity.username : oppName, rating: setup.userColor === 'b' ? identity.ratings.rapid.rating : oppElo, avatarSeed: setup.userColor === 'b' ? identity.avatarSeed : oppName, flag: setup.userColor === 'b' ? identity.flag : null },
       myColor: setup.userColor,
       date: Date.now(),
     })
@@ -451,9 +529,9 @@ function ComputerGame({
     if (over || s.plies.length === 0) return
     if (botAcceptsDraw(evalScore, engineColor)) {
       s.agreeDraw()
-      toast.show(`${lvl.name} accepts the draw`)
+      toast.show(`${oppName} accepts the draw`)
     } else {
-      toast.show(`${lvl.name} declines the draw`)
+      toast.show(`${oppName} declines the draw`)
     }
   }
 
@@ -476,15 +554,15 @@ function ComputerGame({
       <PlayerStrip
         top={top}
         onTap={isEngine ? onOpponentTap : undefined}
-        name={isEngine ? lvl.name : identity.username}
-        rating={isEngine ? lvl.elo : identity.ratings.rapid.rating}
-        avatarSeed={isEngine ? lvl.name : identity.avatarSeed}
+        name={isEngine ? oppName : identity.username}
+        rating={isEngine ? oppElo : identity.ratings.rapid.rating}
+        avatarSeed={isEngine ? oppName : identity.avatarSeed}
         flag={isEngine ? null : identity.flag}
         pieceSet={settings.pieceSet}
         captured={color === 'w' ? caps.byWhite : caps.byBlack}
         active={!over && turn === color}
         thinking={isEngine && thinking}
-        subtitle={isEngine ? `Level ${lvl.level} · ~${lvl.elo}` : undefined}
+        subtitle={isEngine ? (champ ? champ.title : `Level ${lvl.level} · ~${lvl.elo}`) : undefined}
         clock={
           setup.tc ? (
             <GameClock getMs={() => s.core.remaining(color, Date.now()) ?? 0} running={!over && turn === color} lowMs={Math.min(15_000, Math.floor((setup.tc.base ?? 60000) / 6))} />
@@ -518,7 +596,7 @@ function ComputerGame({
             blindfold={settings.blindfold}
             premove={s.premove}
             arrows={arrows}
-            ariaLabel={`Chess board vs ${lvl.name}`}
+            ariaLabel={`Chess board vs ${oppName}`}
           />
         </div>
         {stripFor(bottomColor, false)}
@@ -527,7 +605,7 @@ function ComputerGame({
       <div className="game-side" data-tab="moves">
         {s.result && (
           <div className="result-banner">
-            <div className="rb-title">{resultTitle(s.result, identity.username, lvl.name)}</div>
+            <div className="rb-title">{resultTitle(s.result, identity.username, oppName)}</div>
             <div className="rb-sub">
               {s.result.winner === null ? '½ – ½' : s.result.winner === setup.userColor ? 'You won!' : 'Better luck next time.'}
             </div>
@@ -539,7 +617,7 @@ function ComputerGame({
 
         <div className="pane" data-pane="moves">
           <div className="side-head">
-            <b>vs {lvl.name}</b>
+            <b>vs {oppName}</b>
             <span>
               level {lvl.level} · {setup.tc?.label ?? 'untimed'}
             </span>
@@ -589,7 +667,7 @@ function ComputerGame({
 
           <div className="card" style={{ padding: 12 }}>
             <div style={{ fontSize: 13.5, color: 'var(--text-dim)' }}>
-              vs <b>{lvl.name}</b> ({lvl.blurb}) — premoves are {settings.premoves ? 'on' : 'off'}. Right-drag to draw arrows,
+              vs <b>{oppName}</b> ({champ ? champ.style : lvl.blurb}) — premoves are {settings.premoves ? 'on' : 'off'}. Right-drag to draw arrows,
               right-click a square to mark it.
             </div>
           </div>
@@ -608,7 +686,7 @@ function ComputerGame({
       {confirmResign && (
         <Confirm
           title="Resign"
-          message={`Resign against ${lvl.name}? You'll lose this game.`}
+          message={`Resign against ${oppName}? You'll lose this game.`}
           confirmLabel="Resign"
           danger
           onCancel={() => setConfirmResign(false)}
