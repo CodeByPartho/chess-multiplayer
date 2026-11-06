@@ -137,7 +137,7 @@ function PassPlayGame({
   onFlip: () => void
   onNewGame: () => void
   onRematch: () => void
-  settings: { pieceSet: string; coords: boolean; autoQueen: boolean }
+  settings: { pieceSet: string; coords: boolean; autoQueen: boolean; blindfold: boolean }
   toastError: (m: string) => void
   toastShow: (m: string) => void
   confirmResign: boolean
@@ -218,6 +218,7 @@ function PassPlayGame({
             pieceSet={settings.pieceSet}
             coords={settings.coords}
             autoQueen={settings.autoQueen}
+            blindfold={settings.blindfold}
             ariaLabel={`Chess board, ${nameOf(bottomColor)} at the bottom`}
           />
         </div>

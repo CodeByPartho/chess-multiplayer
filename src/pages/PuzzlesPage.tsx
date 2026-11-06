@@ -144,6 +144,34 @@ export default function PuzzlesPage({ puzzleId }: { puzzleId?: string }) {
             <span className="ac-sub">5 minutes — how many can you solve?</span>
           </span>
         </button>
+        <button className="action-card" onClick={() => navigate('/puzzles/storm')}>
+          <span className="ac-icon"><IconClock size={22} /></span>
+          <span>
+            <span className="ac-title">Puzzle storm</span>
+            <span className="ac-sub">2 minutes, solves add time, 3 strikes and out</span>
+          </span>
+        </button>
+        <button className="action-card" onClick={() => navigate('/puzzles/streak')}>
+          <span className="ac-icon"><IconTarget size={22} /></span>
+          <span>
+            <span className="ac-title">Puzzle streak</span>
+            <span className="ac-sub">Endless run, one wrong move ends it</span>
+          </span>
+        </button>
+        <button className="action-card" onClick={() => navigate('/puzzles/battle')}>
+          <span className="ac-icon"><IconTarget size={22} /></span>
+          <span>
+            <span className="ac-title">Puzzle battle</span>
+            <span className="ac-sub">Race a computer solver for 3 minutes</span>
+          </span>
+        </button>
+        <button className="action-card" onClick={() => navigate('/coordinates')}>
+          <span className="ac-icon"><IconTarget size={22} /></span>
+          <span>
+            <span className="ac-title">Coordinates trainer</span>
+            <span className="ac-sub">Learn the board: find the named square, fast</span>
+          </span>
+        </button>
       </div>
 
       <div className="card">

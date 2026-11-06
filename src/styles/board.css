@@ -313,3 +313,7 @@
   content: '…';
   animation: blink 1.2s infinite;
 }
+
+/* blindfold mode: pieces are on the board, just not shown */
+.board.blindfold .piece { opacity: 0; }
+.board.blindfold .piece.dragging { opacity: 0.35; }

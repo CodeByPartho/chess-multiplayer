@@ -45,6 +45,8 @@ export interface BoardProps {
   keyboard?: boolean
   className?: string
   ariaLabel?: string
+  /** hide the pieces (blindfold training) */
+  blindfold?: boolean
   /** dim overlay (e.g. while computer thinks) */
   overlay?: React.ReactNode
 }
@@ -84,6 +86,7 @@ export function Board({
   onEditorPlace,
   onEditorErase,
   keyboard = false,
+  blindfold = false,
   className = '',
   ariaLabel = 'Chess board',
   overlay,
@@ -520,7 +523,7 @@ export function Board({
   return (
     <div
       ref={boardRef}
-      className={`board ${drag?.active ? '' : 'anim'} ${editing ? 'editing' : ''} ${className}`}
+      className={`board ${drag?.active ? '' : 'anim'} ${editing ? 'editing' : ''} ${blindfold ? 'blindfold' : ''} ${className}`}
       role="application"
       aria-label={ariaLabel}
       tabIndex={keyboard ? 0 : -1}

@@ -494,6 +494,7 @@ function ComputerGame({
             pieceSet={settings.pieceSet}
             coords={settings.coords}
             autoQueen={settings.autoQueen}
+            blindfold={settings.blindfold}
             premove={s.premove}
             arrows={arrows}
             ariaLabel={`Chess board vs ${lvl.name}`}

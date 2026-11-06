@@ -577,12 +577,13 @@ function OnlineGameView({
   const stripFor = (color: Color, top: boolean) => {
     const info = color === 'w' ? players?.white : players?.black
     const isOpp = color === oppColor
+    const zen = settings.zen
     const stale = info ? Date.now() - new Date(info.last_seen).getTime() > 25_000 : false
     return (
       <PlayerStrip
         top={top}
-        name={info?.username ?? (color === 'w' ? 'White' : 'Black')}
-        rating={(() => {
+        name={zen ? (isOpp ? 'Opponent' : 'You') : (info?.username ?? (color === 'w' ? 'White' : 'Black'))}
+        rating={zen ? undefined : (() => {
           const d = info?.displayRatings?.[pool]
           return d ? `${d.rating}${d.provisional ? '?' : ''}` : '—'
         })()}
@@ -660,6 +661,7 @@ function OnlineGameView({
             coords={settings.coords}
             autoQueen={settings.autoQueen}
             premove={session.premove}
+            blindfold={settings.blindfold}
             ariaLabel="Online game board"
           />
         </div>
@@ -839,19 +841,21 @@ function OnlineGameView({
           <button className={sideTab === 'moves' ? 'active' : ''} onClick={() => setSideTab('moves')}>
             Moves
           </button>
-          <button
-            className={sideTab === 'chat' ? 'active' : ''}
-            onClick={() => {
-              setChatPing(false)
-              setSideTab('chat')
-            }}
-          >
-            Chat{chatPing && sideTab !== 'chat' ? ' •' : ''}
-          </button>
+          {!settings.zen && (
+            <button
+              className={sideTab === 'chat' ? 'active' : ''}
+              onClick={() => {
+                setChatPing(false)
+                setSideTab('chat')
+              }}
+            >
+              Chat{chatPing && sideTab !== 'chat' ? ' •' : ''}
+            </button>
+          )}
         </nav>
       </div>
 
-      {sideTab !== 'chat' && (
+      {!settings.zen && sideTab !== 'chat' && (
         <button
           className="chat-fab"
           onClick={() => {

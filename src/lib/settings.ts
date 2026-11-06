@@ -13,6 +13,8 @@ export interface Settings {
   pieceAnimation: boolean
   showEval: boolean
   confirmActions: boolean
+  zen: boolean
+  blindfold: boolean
 }
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -27,6 +29,8 @@ export const DEFAULT_SETTINGS: Settings = {
   pieceAnimation: true,
   showEval: true,
   confirmActions: true,
+  zen: false,
+  blindfold: false,
 }
 
 let current: Settings = { ...DEFAULT_SETTINGS, ...load<Partial<Settings>>(STORAGE_KEYS.settings, {}) }

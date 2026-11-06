@@ -7,7 +7,7 @@ import { sounds } from './lib/sounds'
 import { Avatar } from './components/Avatar'
 import { AuthModal } from './components/AuthModal'
 import { OnboardingModal } from './components/OnboardingModal'
-import { IconBlocks, IconChart, IconCpu, IconKey, IconMedal, IconRepeat, IconSliders, IconTrophy } from './components/icons'
+import { IconBlocks, IconBulb, IconCalendar, IconCamera, IconChart, IconChat, IconCpu, IconDice, IconKey, IconMedal, IconRepeat, IconSliders, IconTarget, IconTrophy, IconUsers } from './components/icons'
 import { useAuth, signOutEverywhere } from './net/auth'
 import { fetchMyProfile, type ProfileRow } from './net/profileClient'
 import { fetchRatingFor } from './net/ratingsClient'
@@ -35,6 +35,23 @@ const ProfilePage = lazy(() => import('./pages/ProfilePage'))
 const LeaderboardPage = lazy(() => import('./pages/LeaderboardPage'))
 const PrivacyPage = lazy(() => import('./pages/PrivacyPage'))
 const TermsPage = lazy(() => import('./pages/TermsPage'))
+const LessonsPage = lazy(() => import('./pages/LessonsPage'))
+const PracticePage = lazy(() => import('./pages/PracticePage'))
+const StudiesPage = lazy(() => import('./pages/StudiesPage'))
+const VariantsPage = lazy(() => import('./pages/VariantsPage'))
+const CoordinatesPage = lazy(() => import('./pages/CoordinatesPage'))
+const PuzzleModesPage = lazy(() => import('./pages/PuzzleModesPage'))
+const CorrespondencePage = lazy(() => import('./pages/CorrespondencePage'))
+const FriendsPage = lazy(() => import('./pages/FriendsPage'))
+const WatchPage = lazy(() => import('./pages/WatchPage').then((m) => ({ default: m.WatchPage })))
+const SpectatePage = lazy(() => import('./pages/WatchPage').then((m) => ({ default: m.SpectatePage })))
+const TournamentsPage = lazy(() => import('./pages/TournamentsPage'))
+const LeaguesPage = lazy(() => import('./pages/LeaguesPage'))
+const SimulsPage = lazy(() => import('./pages/SimulsPage'))
+const ClubsPage = lazy(() => import('./pages/ClubsPage'))
+const ForumsPage = lazy(() => import('./pages/ForumsPage'))
+const MessagesPage = lazy(() => import('./pages/MessagesPage'))
+const InsightsPage = lazy(() => import('./pages/InsightsPage'))
 
 function applyDocumentSettings() {
   const s = getSettings()
@@ -48,7 +65,17 @@ function applyDocumentSettings() {
 /** desktop / mobile navigation entries */
 const SIDE_LINKS: { to: string; label: string; icon: ReactNode }[] = [
   { to: '/play', label: 'Play', icon: '♟' },
+  { to: '/correspondence', label: 'Correspondence', icon: <IconCalendar /> },
+  { to: '/watch', label: 'Watch', icon: <IconCamera /> },
+  { to: '/tournaments', label: 'Tournaments', icon: <IconTrophy /> },
   { to: '/puzzles', label: 'Puzzles', icon: <IconBlocks /> },
+  { to: '/lessons', label: 'Lessons', icon: <IconBulb /> },
+  { to: '/variants', label: 'Variants', icon: <IconDice /> },
+  { to: '/friends', label: 'Friends', icon: <IconUsers /> },
+  { to: '/clubs', label: 'Clubs', icon: '♜' },
+  { to: '/forums', label: 'Forums', icon: <IconChat /> },
+  { to: '/messages', label: 'Messages', icon: <IconChat /> },
+  { to: '/insights', label: 'Insights', icon: <IconTarget /> },
   { to: '/analysis', label: 'Analysis', icon: <IconChart /> },
   { to: '/computer', label: 'Computer', icon: <IconCpu /> },
   { to: '/passandplay', label: 'Pass & Play', icon: <IconRepeat /> },
@@ -143,6 +170,10 @@ function TopNav() {
     { to: '/computer', label: 'Computer' },
     { to: '/passandplay', label: 'Pass & Play' },
     { to: '/puzzles', label: 'Puzzles' },
+    { to: '/lessons', label: 'Lessons' },
+    { to: '/variants', label: 'Variants' },
+    { to: '/tournaments', label: 'Tournaments' },
+    { to: '/watch', label: 'Watch' },
     { to: '/analysis', label: 'Analysis' },
     { to: '/leaderboard', label: 'Leaderboards' },
   ]
@@ -262,6 +293,15 @@ function AccountChip() {
             <Link to="/account" onClick={() => setMenu(false)}>
               Account settings
             </Link>
+            <Link to="/friends" onClick={() => setMenu(false)}>
+              Friends
+            </Link>
+            <Link to="/messages" onClick={() => setMenu(false)}>
+              Messages
+            </Link>
+            <Link to="/insights" onClick={() => setMenu(false)}>
+              Insights
+            </Link>
             <Link to="/leaderboard" onClick={() => setMenu(false)}>
               Leaderboards
             </Link>
@@ -331,6 +371,21 @@ function RouteView() {
   if (path === '/computer') return <ComputerPage />
   if (path === '/passandplay') return <PassPlayPage />
   if (path === '/puzzles') return <PuzzlesPage />
+  if (path === '/lessons') return <LessonsPage />
+  if (path === '/practice') return <PracticePage />
+  if (path === '/studies') return <StudiesPage />
+  if (path === '/variants') return <VariantsPage />
+  if (path === '/coordinates') return <CoordinatesPage />
+  if (path === '/correspondence') return <CorrespondencePage />
+  if (path === '/friends') return <FriendsPage />
+  if (path === '/watch') return <WatchPage />
+  if (path === '/tournaments') return <TournamentsPage />
+  if (path === '/leagues') return <LeaguesPage />
+  if (path === '/simuls') return <SimulsPage />
+  if (path === '/clubs') return <ClubsPage />
+  if (path === '/forums') return <ForumsPage />
+  if (path === '/messages') return <MessagesPage />
+  if (path === '/insights') return <InsightsPage />
   if (path === '/analysis') return <AnalysisPage />
   if (path === '/settings') return <SettingsPage />
   if (path === '/credits') return <CreditsPage />
@@ -347,12 +402,24 @@ function RouteView() {
 
   let m = matchPath('/play/:gameId', path)
   if (m) return <GamePage key={m.gameId} gameId={m.gameId} />
+  m = matchPath('/watch/:gameId', path)
+  if (m) return <SpectatePage key={m.gameId} gameId={m.gameId} />
+  m = matchPath('/messages/:userId', path)
+  if (m) return <MessagesPage key={m.userId} userId={m.userId} />
   m = matchPath('/join/:gameId', path)
   if (m) return <JoinScreen key={m.gameId} gameId={m.gameId} onGo={(to) => navigate(to)} />
   m = matchPath('/invite/:code', path)
   if (m) return <JoinScreen key={m.code} code={m.code} onGo={(to) => navigate(to)} />
   m = matchPath('/puzzles/rush', path)
   if (m) return <PuzzleRushPage />
+  m = matchPath('/puzzles/storm', path)
+  if (m) return <PuzzleModesPage mode="storm" />
+  m = matchPath('/puzzles/streak', path)
+  if (m) return <PuzzleModesPage mode="streak" />
+  m = matchPath('/puzzles/battle', path)
+  if (m) return <PuzzleModesPage mode="battle" />
+  m = matchPath('/puzzles/coordinates', path)
+  if (m) return <CoordinatesPage />
   m = matchPath('/review/:id', path)
   if (m) return <AnalysisPage reviewId={m.id} />
   m = matchPath('/puzzle/:id', path)
@@ -407,6 +474,9 @@ function Footer() {
     <footer className="site-footer">
       <span className="sf-copy">© 2026 FreeChess</span>
       <nav aria-label="Footer">
+        <Link to="/tournaments">Tournaments</Link>
+        <Link to="/clubs">Clubs</Link>
+        <Link to="/forums">Forums</Link>
         <Link to="/leaderboard">Leaderboards</Link>
         <Link to="/privacy">Privacy</Link>
         <Link to="/terms">Terms</Link>
@@ -431,6 +501,20 @@ function useDocumentTitle(path: string) {
     else if (path === '/terms') title = 'Terms of Service · FreeChess'
     else if (path === '/play') title = 'Lobby · FreeChess'
     else if (path === '/computer') title = 'Play the Computer · FreeChess'
+    else if (path === '/correspondence') title = 'Correspondence Chess · FreeChess'
+    else if (path === '/watch' || path.startsWith('/watch/')) title = 'Watch Live Games · FreeChess'
+    else if (path === '/tournaments') title = 'Tournaments · FreeChess'
+    else if (path === '/leagues') title = 'Leagues · FreeChess'
+    else if (path === '/simuls') title = 'Simuls · FreeChess'
+    else if (path === '/lessons') title = 'Chess Lessons · FreeChess'
+    else if (path === '/practice') title = 'Practice Drills · FreeChess'
+    else if (path === '/studies') title = 'Studies · FreeChess'
+    else if (path === '/variants') title = 'Chess Variants · FreeChess'
+    else if (path === '/friends') title = 'Friends · FreeChess'
+    else if (path === '/clubs') title = 'Clubs · FreeChess'
+    else if (path === '/forums') title = 'Forums · FreeChess'
+    else if (path === '/messages' || path.startsWith('/messages/')) title = 'Messages · FreeChess'
+    else if (path === '/insights') title = 'Your Chess Insights · FreeChess'
     else if (path === '/puzzles') title = 'Chess Puzzles · FreeChess'
     else if (path === '/analysis') title = 'Analysis · FreeChess'
     document.title = title

@@ -18,7 +18,7 @@ export interface JoinGameInfo {
   black_id: string | null
   invite_code: string | null
   created_at: string
-  tc: TimeControl
+  tc: TimeControl | null
   rated: boolean
 }
 
@@ -43,7 +43,7 @@ export type JoinView =
       gameId: string
       code: string | null
       myColor: Color
-      tc: TimeControl
+      tc: TimeControl | null
       rated: boolean
     }
 

@@ -231,6 +231,8 @@ export default function SettingsPage() {
         <Toggle label="Auto-queen on promotion" on={settings.autoQueen} onChange={(v) => updateSettings({ autoQueen: v })} />
         <Toggle label="Show evaluation bar" on={settings.showEval} onChange={(v) => updateSettings({ showEval: v })} />
         <Toggle label="Confirm resign / abort" on={settings.confirmActions} onChange={(v) => updateSettings({ confirmActions: v })} />
+        <Toggle label="Zen mode (hide ratings and chat in games)" on={settings.zen} onChange={(v) => updateSettings({ zen: v })} />
+        <Toggle label="Blindfold (hide the pieces)" on={settings.blindfold} onChange={(v) => updateSettings({ blindfold: v })} />
 
         <div className="divider" />
         <h2>Sound</h2>

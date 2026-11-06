@@ -26,12 +26,12 @@ Deno.serve(async (req) => {
     if (rlErr) throw new Error(rlErr.message)
     if (allowed !== true) return json(req, { error: 'too many games created — try again later' }, 429)
 
-    const tc = body.tc
+    const tc = body.tc === null ? null : body.tc
     if (!validTc(tc)) return bad(req, 'invalid time control')
     const rated = body.rated === true // invites default to casual
     const playAs: 'w' | 'b' = body.playAs === 'b' ? 'b' : body.playAs === 'w' ? 'w' : Math.random() < 0.5 ? 'w' : 'b'
 
-    const base = Number(tc.base)
+    const base = tc ? Number(tc.base) : 0
     const code = randCode()
     const { data, error } = await supa
       .from('games')

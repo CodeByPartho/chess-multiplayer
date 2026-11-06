@@ -5,7 +5,7 @@ import { setMatchPrefs } from '@/lib/matchPrefs'
 import { loadHistory, resultForMe } from '@/lib/history'
 import { load, save } from '@/lib/storage'
 import { Modal } from '@/components/Modal'
-import { IconBlocks, IconBolt, IconChart, IconClock, IconCpu, IconFlame, IconTarget, IconUsers } from '@/components/icons'
+import { IconBlocks, IconBolt, IconBulb, IconCalendar, IconCamera, IconChart, IconClock, IconCpu, IconDice, IconFlame, IconTarget, IconTrophy, IconUsers } from '@/components/icons'
 
 const SECTIONS: { type: TCType; label: string; icon: ReactNode }[] = [
   { type: 'bullet', label: 'Bullet', icon: <IconBolt size={14} /> },
@@ -85,7 +85,7 @@ export default function Home() {
           <span className="ac-icon"><IconBlocks size={22} /></span>
           <span>
             <span className="ac-title">Puzzles</span>
-            <span className="ac-sub">Daily puzzle, puzzle rush, themes</span>
+            <span className="ac-sub">Daily puzzle, rush, storm, streak & themes</span>
           </span>
         </Link>
         <Link to="/analysis" className="action-card">
@@ -100,6 +100,48 @@ export default function Home() {
           <span>
             <span className="ac-title">Pass &amp; play</span>
             <span className="ac-sub">Two players, one device</span>
+          </span>
+        </Link>
+        <Link to="/variants" className="action-card">
+          <span className="ac-icon"><IconDice size={22} /></span>
+          <span>
+            <span className="ac-title">Variants</span>
+            <span className="ac-sub">Chess960, Crazyhouse, Atomic, Horde & more</span>
+          </span>
+        </Link>
+        <Link to="/lessons" className="action-card">
+          <span className="ac-icon"><IconBulb size={22} /></span>
+          <span>
+            <span className="ac-title">Lessons &amp; drills</span>
+            <span className="ac-sub">Interactive lessons and endgame practice</span>
+          </span>
+        </Link>
+        <Link to="/tournaments" className="action-card">
+          <span className="ac-icon"><IconTrophy size={22} /></span>
+          <span>
+            <span className="ac-title">Tournaments</span>
+            <span className="ac-sub">Arena events with live standings</span>
+          </span>
+        </Link>
+        <Link to="/correspondence" className="action-card">
+          <span className="ac-icon"><IconCalendar size={22} /></span>
+          <span>
+            <span className="ac-title">Correspondence</span>
+            <span className="ac-sub">Untimed games, a move whenever you like</span>
+          </span>
+        </Link>
+        <Link to="/watch" className="action-card">
+          <span className="ac-icon"><IconCamera size={22} /></span>
+          <span>
+            <span className="ac-title">Watch live</span>
+            <span className="ac-sub">Follow games being played right now</span>
+          </span>
+        </Link>
+        <Link to="/insights" className="action-card">
+          <span className="ac-icon"><IconTarget size={22} /></span>
+          <span>
+            <span className="ac-title">Your insights</span>
+            <span className="ac-sub">Stats, openings and achievements</span>
           </span>
         </Link>
 

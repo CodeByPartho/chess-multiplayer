@@ -233,7 +233,7 @@ export default function JoinScreen({
                   {creator ? `${creator.username} invited you to a game` : 'Loading the host…'}
                 </div>
                 <div className="hint" style={{ margin: 0 }}>
-                  {view.tc.label} · {view.tc.type} · {view.rated ? 'Rated' : 'Casual'}
+                  {view.tc ? `${view.tc.label} · ${view.tc.type}` : 'Correspondence · no clock'} · {view.rated ? 'Rated' : 'Casual'}
                 </div>
               </div>
             </div>

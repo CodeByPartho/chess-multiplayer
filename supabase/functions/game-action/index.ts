@@ -62,8 +62,9 @@ Deno.serve(async (req) => {
         }
 
         const now = Date.now()
-        const myMs = remainingMs(game, me, now)
-        if (myMs <= 0) {
+        const untimed = !game.tc
+        const myMs = untimed ? 1 : remainingMs(game, me, now)
+        if (!untimed && myMs <= 0) {
           // flagged while trying to move
           const draw = chess.isInsufficientMaterial()
           await endGame(supa, game, draw ? { winner: null, reason: 'insufficient' } : { winner: opp, reason: 'timeout' })
@@ -71,11 +72,11 @@ Deno.serve(async (req) => {
         }
 
         const inc = Number(game.tc?.inc ?? 0)
-        const afterMs = myMs + inc
+        const afterMs = untimed ? 0 : myMs + inc
         const ply: PlyRec = { uci: move.from + move.to + (move.promotion ?? ''), san: move.san, at: now, wms: 0, bms: 0 }
         const moves = [...game.moves, ply]
-        const wms = me === 'w' ? afterMs : remainingMs(game, 'w', now)
-        const bms = me === 'b' ? afterMs : remainingMs(game, 'b', now)
+        const wms = untimed ? 0 : me === 'w' ? afterMs : remainingMs(game, 'w', now)
+        const bms = untimed ? 0 : me === 'b' ? afterMs : remainingMs(game, 'b', now)
         ply.wms = wms
         ply.bms = bms
 
@@ -175,7 +176,7 @@ Deno.serve(async (req) => {
         // My own flag fell: end it now instead of waiting for the opponent to
         // notice. A client that sees its own clock at 0 asks for the verdict,
         // and the server decides the loss (not the claiming client).
-        if (game.turn === me && remainingMs(game, me, now) <= 0) {
+        if (game.tc && game.turn === me && remainingMs(game, me, now) <= 0) {
           const chess = replayChess(game)
           const draw = chess.isInsufficientMaterial()
           await endGame(supa, game, draw ? { winner: null, reason: 'insufficient' } : { winner: opp, reason: 'timeout' })
@@ -184,7 +185,7 @@ Deno.serve(async (req) => {
 
         const oppMs = remainingMs(game, opp, now)
         let reason: string | null = null
-        if (oppMs <= 0) reason = 'timeout'
+        if (game.tc && oppMs <= 0) reason = 'timeout'
         else {
           const oppId = game[opp === 'w' ? 'white_id' : 'black_id']
           if (!oppId) return bad(req, 'opponent unknown')

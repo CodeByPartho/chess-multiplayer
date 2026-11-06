@@ -66,7 +66,8 @@ export interface GameRow {
   /** nullable only while an invite-link game waits for its opponent */
   white_id: string | null
   black_id: string | null
-  tc: { base: number; inc: number; type: string; label?: string }
+  /** null = correspondence (untimed, no clock ever runs) */
+  tc: { base: number; inc: number; type: string; label?: string } | null
   rated: boolean
   start_fen: string
   moves: PlyRec[]
@@ -152,8 +153,9 @@ export function remainingMs(game: GameRow, color: 'w' | 'b', now = Date.now()): 
   return Math.max(0, base - elapsed)
 }
 
-/** Validate a time control coming from invite creation. */
+/** Validate a time control coming from invite creation. null = correspondence. */
 export function validTc(tc: unknown): tc is GameRow['tc'] {
+  if (tc === null) return true
   const t = tc as GameRow['tc'] | null
   if (!t || typeof t !== 'object') return false
   const base = Number(t.base)

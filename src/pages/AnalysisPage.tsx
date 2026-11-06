@@ -18,6 +18,8 @@ import { validateFen, parsePgn, buildPgn } from '@/lib/chess/pgn'
 import { detectOpening, openings } from '@/assets/openings'
 import { getGame, saveGame } from '@/lib/history'
 import { reviewGame, type GameReviewResult, type ReviewProgress } from '@/game/review'
+import { buildReviewInsights } from '@/game/reviewInsights'
+import { fetchTablebase, pieceCount, tablebaseSummary, type TablebaseResult } from '@/net/tablebase'
 import type { ClassLabel } from '@/lib/chess/classify'
 import { copyText } from '@/lib/clipboard'
 import { pgnResult } from '@/game/resultText'
@@ -625,6 +627,30 @@ function AnalyzeView({
     ? result.classes.filter((c) => c === 'blunder' || c === 'mistake' || c === 'miss').length
     : 0
 
+  const insights = useMemo(
+    () => (result ? buildReviewInsights(result, startFen, s.plies.map((p) => p.uci), sans) : null),
+    [result, startFen, s.plies, sans],
+  )
+  const coachText = insights && s.displayPly > 0 ? insights.explanations.get(s.displayPly - 1) : undefined
+
+  const [tb, setTb] = useState<TablebaseResult | null>(null)
+  useEffect(() => {
+    if (pieceCount(s.displayFen) > 7) {
+      setTb(null)
+      return
+    }
+    let dead = false
+    const id = setTimeout(() => {
+      void fetchTablebase(s.displayFen).then((r) => {
+        if (!dead) setTb(r)
+      })
+    }, 250)
+    return () => {
+      dead = true
+      clearTimeout(id)
+    }
+  }, [s.displayFen])
+
   return (
     <div className="game-layout">
       <div className="game-main">
@@ -686,6 +712,31 @@ function AnalyzeView({
                 Mistake ▶
               </button>
             </div>
+            {insights && insights.keyMoments.length > 0 && (
+              <div style={{ marginTop: 10, textAlign: 'left' }}>
+                <div style={{ fontWeight: 700, fontSize: 13.5, marginBottom: 4 }}>Key moments</div>
+                {insights.keyMoments.map((k) => (
+                  <button
+                    key={k.ply}
+                    className="btn btn-sm btn-ghost"
+                    style={{ display: 'block', width: '100%', textAlign: 'left', whiteSpace: 'normal', height: 'auto', padding: '6px 8px' }}
+                    onClick={() => s.seek(k.ply + 1)}
+                  >
+                    <b>
+                      {Math.floor(k.ply / 2) + 1}
+                      {k.ply % 2 === 0 ? '. ' : '... '}
+                      {k.san}
+                    </b>{' '}
+                    — {k.text}
+                  </button>
+                ))}
+              </div>
+            )}
+            {coachText && (
+              <p style={{ margin: '10px 0 0', textAlign: 'left', fontSize: 13.5, lineHeight: 1.5 }}>
+                <b>Coach:</b> {coachText}
+              </p>
+            )}
           </div>
         )}
 
@@ -800,6 +851,23 @@ function AnalyzeView({
                     {a.san}
                     {'count' in a ? ` (${a.count})` : ''}
                     {'eco' in a && a.eco ? ` · ${a.eco}` : ''}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {tb && (
+            <div className="card" style={{ padding: 10 }}>
+              <div className="hint" style={{ marginBottom: 6 }}>
+                Tablebase (7 pieces or fewer, perfect play)
+              </div>
+              <div style={{ fontSize: 14, marginBottom: 6 }}>{tablebaseSummary(s.displayFen, tb)}</div>
+              <div className="pv-lines">
+                {tb.moves.map((m) => (
+                  <button key={m.uci} className="pv-line" onClick={() => s.tryUserMove(m.uci)} title="Play this move">
+                    <span className="pv-score">{m.category}</span>
+                    <span className="pv-moves">{m.san}</span>
                   </button>
                 ))}
               </div>

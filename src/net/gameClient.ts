@@ -1,6 +1,6 @@
 import { Chess } from 'chess.js'
 import type { Color, Ply, TimeControl } from '@/lib/chess/types'
-import { ensureAuth, supabase } from './supabase'
+import { ensureAuth, myUserId, supabase } from './supabase'
 
 export interface ServerPly {
   uci: string
@@ -15,7 +15,8 @@ export interface ServerGame {
   status: 'waiting' | 'active' | 'over' | 'aborted'
   white_id: string | null
   black_id: string | null
-  tc: TimeControl
+  /** null = correspondence (untimed) */
+  tc: TimeControl | null
   rated: boolean
   start_fen: string
   moves: ServerPly[]
@@ -159,7 +160,7 @@ export async function sendAction(gameId: string, action: string, extra: Record<s
 }
 
 export async function createInvite(
-  tc: TimeControl,
+  tc: TimeControl | null,
   rated: boolean,
   playAs: Color | 'random',
 ): Promise<{ gameId: string; code: string; playAs: Color }> {
@@ -231,4 +232,20 @@ export function toCorePly(startFen: string, serverMoves: ServerPly[]): Ply[] {
     }
   }
   return out
+}
+
+/** The signed-in (or guest) user's waiting and active games, newest activity first. */
+export async function fetchMyGames(limit = 50): Promise<ServerGame[]> {
+  await ensureAuth()
+  const uid = await myUserId()
+  if (!uid) return []
+  const { data, error } = await supabase
+    .from('games')
+    .select('*')
+    .or(`white_id.eq.${uid},black_id.eq.${uid}`)
+    .in('status', ['waiting', 'active'])
+    .order('updated_at', { ascending: false })
+    .limit(limit)
+  if (error) return []
+  return (data as ServerGame[]) ?? []
 }
