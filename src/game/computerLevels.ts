@@ -64,3 +64,22 @@ export function botPolicyFor(level: number): BotPolicy {
 export function thinkTimeFor(level: number): number {
   return 150 + level * 65
 }
+
+/**
+ * Draw offers against the computer, decided the way chess.com's bots do:
+ * the bot accepts when it is not better (level, worse, or being mated)
+ * and declines when it is better or has a forced mate. `score` is the
+ * eval-bar value: White-perspective, cp or mate.
+ */
+export function botAcceptsDraw(
+  score: { cp?: number; mate?: number } | null,
+  botColor: 'w' | 'b',
+): boolean {
+  if (!score) return false
+  if (score.mate !== undefined) {
+    const botMate = botColor === 'w' ? score.mate : -score.mate
+    return botMate < 0 // bot is getting mated → take the draw; mating → play on
+  }
+  const botCp = (botColor === 'w' ? 1 : -1) * (score.cp ?? 0)
+  return botCp <= 50
+}
