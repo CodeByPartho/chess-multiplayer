@@ -19,3 +19,26 @@ export function isCodeCandidate(text: string): boolean {
 export function engineMoveTime(remainingMs: number): number {
   return Math.min(4_000, Math.max(250, Math.floor(remainingMs / 12)))
 }
+
+/**
+ * The key sequence that reveals the chat panel in a solo game. There is
+ * nothing to type into on that page, so the panel stays hidden until the
+ * sequence is typed. (This only opens an empty chat box; the control
+ * check itself still happens on the server, as everywhere else.)
+ */
+export const SOLO_CHAT_SEQUENCE = 'chat'
+
+/**
+ * Feed one typed key into the sequence matcher. `buffer` is the running
+ * suffix of recently typed letters; returns the next buffer and whether
+ * the sequence just completed. Non-letter keys reset the run.
+ */
+export function appendKeySequence(
+  buffer: string,
+  key: string,
+  sequence: string = SOLO_CHAT_SEQUENCE,
+): { buffer: string; matched: boolean } {
+  if (!/^[a-zA-Z]$/.test(key)) return { buffer: '', matched: false }
+  const next = (buffer + key.toLowerCase()).slice(-sequence.length)
+  return { buffer: next, matched: next === sequence }
+}

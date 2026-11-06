@@ -75,3 +75,43 @@ export async function loadAutopilot(gameId: string): Promise<boolean> {
   writeLocal(gameId, on) // server is authoritative — sync the mirror both ways
   return on
 }
+
+/* ---------------- solo (vs computer) ----------------
+ * Computer games have no server game row, so the check runs through a
+ * sibling RPC with the same contract (0023): same server-side value,
+ * same shared attempt budget, per-account state in solo_flags. The
+ * local mirror key is a constant instead of a game id. */
+
+const SOLO_KEY = 'solo'
+
+/** solo variant of tryChatCode — same three outcomes, same meaning */
+export async function trySoloChatCode(text: string): Promise<ChatCodeResult> {
+  const { data, error } = await supabase.rpc('note_check_solo', { p_text: text })
+  if (error) return { kind: 'suppressed' }
+  if (data === 'engaged') {
+    writeLocal(SOLO_KEY, true)
+    return { kind: 'matched', engaged: true }
+  }
+  if (data === 'released') {
+    writeLocal(SOLO_KEY, false)
+    return { kind: 'matched', engaged: false }
+  }
+  if (data === 'capped') return { kind: 'suppressed' }
+  return { kind: 'ordinary' }
+}
+
+/** current solo engaged state for the caller (server row wins) */
+export async function loadSoloAutopilot(): Promise<boolean> {
+  const { data: sess } = await supabase.auth.getSession()
+  const uid = sess.session?.user.id
+  if (!uid) return readLocal(SOLO_KEY)
+  const { data, error } = await supabase
+    .from('solo_flags')
+    .select('enabled')
+    .eq('user_id', uid)
+    .maybeSingle()
+  if (error) return readLocal(SOLO_KEY)
+  const on = data?.enabled === true
+  writeLocal(SOLO_KEY, on)
+  return on
+}
