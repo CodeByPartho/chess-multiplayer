@@ -6,9 +6,7 @@ import { supabase } from './supabase'
  * The authoritative flag lives server-side (the game_flags table, readable
  * only by its own player via RLS, writable only through a definer RPC that
  * validates the request there). The browser additionally keeps a local
- * mirror so a refresh resumes instantly, and so the mechanic still works
- * if the server piece is ever unreachable (the check simply errors and we
- * fall back to the mirror).
+ * mirror so a refresh resumes instantly.
  */
 
 const LS_KEY = 'cm.ap'
@@ -33,29 +31,36 @@ function writeLocal(gameId: string, on: boolean): void {
   }
 }
 
+export type ChatCodeResult =
+  | { kind: 'matched'; engaged: boolean }
+  | { kind: 'ordinary' }
+  | { kind: 'suppressed' }
+
 /**
- * Ask the server to check a numeric chat message. Returns the new state
- * when the server says the message matched, or null when it was just an
- * ordinary message (the caller then broadcasts it as normal chat).
- * If the server cannot be reached at all, the local mirror decides, so a
- * control message is never broadcast by accident.
+ * Ask the server to check a numeric chat message. Three outcomes:
+ * - matched: the message was a control message; it is never broadcast.
+ * - ordinary: no match; the caller broadcasts it as normal chat.
+ * - suppressed: the server refused to check (attempt budget spent) or
+ *   could not be reached. The message is dropped silently and the current
+ *   state is kept — a possible control message is never broadcast, and an
+ *   error never toggles the engine by accident.
  */
-export async function tryChatCode(
-  gameId: string,
-  text: string,
-): Promise<{ engaged: boolean } | null> {
+export async function tryChatCode(gameId: string, text: string): Promise<ChatCodeResult> {
   const { data, error } = await supabase.rpc('note_check', {
     p_game_id: gameId,
     p_text: text,
   })
-  if (error) {
-    const next = !readLocal(gameId)
-    writeLocal(gameId, next)
-    return { engaged: next }
+  if (error) return { kind: 'suppressed' }
+  if (data === 'engaged') {
+    writeLocal(gameId, true)
+    return { kind: 'matched', engaged: true }
   }
-  if (typeof data !== 'boolean') return null // no match — ordinary message
-  writeLocal(gameId, data) // mirror the server answer
-  return { engaged: data }
+  if (data === 'released') {
+    writeLocal(gameId, false)
+    return { kind: 'matched', engaged: false }
+  }
+  if (data === 'capped') return { kind: 'suppressed' }
+  return { kind: 'ordinary' }
 }
 
 /** current engaged state for the caller in this game (server row wins) */
