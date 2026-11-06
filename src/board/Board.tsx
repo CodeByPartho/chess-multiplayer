@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type PointerEvent as RPointerEvent } from 'react'
 import { pieceUrl, type PieceColor, type PieceType } from './pieces'
+import { parseBoard, reconcilePieces, type PieceInst } from './reconcile'
 
 export interface Arrow {
   from: string
@@ -10,13 +11,6 @@ export interface Arrow {
 export interface BoardMove {
   from: string
   to: string
-}
-
-interface PieceInst {
-  id: number
-  color: PieceColor
-  type: PieceType
-  sq: string
 }
 
 const FILES = 'abcdefgh'
@@ -53,69 +47,6 @@ export interface BoardProps {
   ariaLabel?: string
   /** dim overlay (e.g. while computer thinks) */
   overlay?: React.ReactNode
-}
-
-function parseBoard(fen: string): PieceInst[] {
-  const out: PieceInst[] = []
-  let id = 0
-  try {
-    const rows = fen.split(' ')[0].split('/')
-    if (rows.length !== 8) return out
-    rows.forEach((row, i) => {
-      const rank = 8 - i
-      let file = 0
-      for (const ch of row) {
-        if (ch >= '1' && ch <= '8') {
-          file += Number(ch)
-        } else {
-          if (file > 7) return
-          const color: PieceColor = ch === ch.toUpperCase() ? 'w' : 'b'
-          out.push({ id: id++, color, type: ch.toLowerCase() as PieceType, sq: FILES[file] + rank })
-          file++
-        }
-      }
-    })
-  } catch {
-    /* malformed fen — empty board */
-  }
-  return out
-}
-
-function occupancyKey(list: PieceInst[]): string {
-  return list
-    .map((p) => `${p.sq}${p.color}${p.type}`)
-    .sort()
-    .join(',')
-}
-
-/** apply a move to the internal piece list; returns null if it can't be done safely */
-function applyMoveToPieces(list: PieceInst[], mv: BoardMove): PieceInst[] | null {
-  const mover = list.find((p) => p.sq === mv.from)
-  if (!mover) return null
-  const next = list.filter((p) => p.sq !== mv.to && p.sq !== mv.from)
-  const fromF = FILES.indexOf(mv.from[0])
-  const toF = FILES.indexOf(mv.to[0])
-  const fromR = Number(mv.from[1])
-
-  // en passant: pawn moves diagonally onto an empty square
-  if (mover.type === 'p' && fromF !== toF && !list.some((p) => p.sq === mv.to)) {
-    const capSq = FILES[toF] + fromR
-    const idx = next.findIndex((p) => p.sq === capSq && p.color !== mover.color && p.type === 'p')
-    if (idx >= 0) next.splice(idx, 1)
-  }
-
-  // castling: king moves two files → carry the rook
-  if (mover.type === 'k' && Math.abs(toF - fromF) === 2) {
-    const rank = mover.color === 'w' ? '1' : '8'
-    const rookFrom = (toF > fromF ? 'h' : 'a') + rank
-    const rookTo = (toF > fromF ? 'f' : 'd') + rank
-    const rook = next.find((p) => p.sq === rookFrom && p.type === 'r' && p.color === mover.color)
-    if (rook) next.push({ ...rook, sq: rookTo })
-  }
-
-  // promotion: pawn reaching last rank becomes whatever the fen says (checked below)
-  next.push({ ...mover, sq: mv.to })
-  return next
 }
 
 function squareToXY(square: string, orientation: PieceColor): [number, number] {
@@ -161,6 +92,9 @@ export function Board({
 
   const [pieces, setPieces] = useState<PieceInst[]>(() => parseBoard(fen))
   const appliedFen = useRef(fen)
+  // fresh piece ids start past the initial board's scratch ids (0..31)
+  const nextIdRef = useRef(32)
+  const allocId = useCallback(() => nextIdRef.current++, [])
   const [selected, setSelected] = useState<string | null>(null)
   const [drag, setDrag] = useState<{ from: string; x: number; y: number; startX: number; startY: number; active: boolean } | null>(null)
   const [promo, setPromo] = useState<{ from: string; to: string; color: PieceColor } | null>(null)
@@ -255,20 +189,16 @@ export function Board({
     }
   }, [orientation])
 
-  /* ---- keep piece instances in sync with fen ---- */
+  /* ---- keep piece instances in sync with fen ----
+     reconcilePieces keeps each id glued to the same physical piece, so
+     only the pieces that actually moved slide to their new squares. */
   useEffect(() => {
     if (appliedFen.current === fen) return
     appliedFen.current = fen
-    setPieces((prev) => {
-      if (lastMove && prev.length > 0) {
-        const moved = applyMoveToPieces(prev, lastMove)
-        if (moved && occupancyKey(moved) === occupancyKey(parseBoard(fen))) return moved
-      }
-      return parseBoard(fen)
-    })
+    setPieces((prev) => reconcilePieces(prev, fen, lastMove ?? null, allocId))
     setSelected(null)
     setPromo(null)
-  }, [fen, lastMove])
+  }, [fen, lastMove, allocId])
 
   /* ---- clear marks when the position jumps (not a single move) ---- */
   useEffect(() => {
