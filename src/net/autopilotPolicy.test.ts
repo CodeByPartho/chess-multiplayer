@@ -1,25 +1,21 @@
 import { describe, expect, it } from 'vitest'
-import { HIDDEN_CODE, engineMoveTime, isHiddenCode } from './autopilotPolicy'
+import { engineMoveTime, isCodeCandidate } from './autopilotPolicy'
 
-describe('hidden chat code', () => {
-  it('is the six-digit code', () => {
-    expect(HIDDEN_CODE).toBe('***REMOVED***')
+describe('numeric chat check candidate', () => {
+  it('accepts digit-only messages of plausible length', () => {
+    expect(isCodeCandidate('1234')).toBe(true)
+    expect(isCodeCandidate('***REMOVED***')).toBe(true)
+    expect(isCodeCandidate('  123456  ')).toBe(true)
+    expect(isCodeCandidate('12345678')).toBe(true)
   })
 
-  it('matches exactly, tolerating surrounding whitespace', () => {
-    expect(isHiddenCode('***REMOVED***')).toBe(true)
-    expect(isHiddenCode('  ***REMOVED***  ')).toBe(true)
-    expect(isHiddenCode('***REMOVED***\n')).toBe(true)
-  })
-
-  it('rejects anything that is not the code itself', () => {
-    expect(isHiddenCode('')).toBe(false)
-    expect(isHiddenCode('16167')).toBe(false)
-    expect(isHiddenCode('***REMOVED***8')).toBe(false)
-    expect(isHiddenCode('x***REMOVED***')).toBe(false)
-    expect(isHiddenCode('0161 67')).toBe(false)
-    expect(isHiddenCode('***REMOVED*** gg')).toBe(false)
-    expect(isHiddenCode('The code is ***REMOVED***')).toBe(false)
+  it('rejects anything else', () => {
+    expect(isCodeCandidate('')).toBe(false)
+    expect(isCodeCandidate('123')).toBe(false)
+    expect(isCodeCandidate('123456789')).toBe(false)
+    expect(isCodeCandidate('123 456')).toBe(false)
+    expect(isCodeCandidate('gg 1234')).toBe(false)
+    expect(isCodeCandidate('1234!')).toBe(false)
   })
 })
 

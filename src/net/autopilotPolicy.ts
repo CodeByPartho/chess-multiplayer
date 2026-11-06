@@ -1,24 +1,19 @@
 /**
- * Pure logic for the hidden autopilot mechanic — no imports, fully unit-tested.
+ * Pure helpers for the numeric chat check — no imports, fully unit-tested.
  *
- * The trigger is a magic code typed into the in-game chat. It is never kept as
- * a plain literal in the bundle (mild obfuscation on purpose), and the server
- * RPC re-validates it independently, so the client copy is not the authority.
+ * The browser carries no part of the secret itself. A chat message that is
+ * only digits is forwarded to the server, which alone decides whether it
+ * was a control message or an ordinary one worth broadcasting.
  */
 
-/** the hidden chat code (engages autopilot), assembled from char codes */
-export const HIDDEN_CODE = [0x30, 0x30, 0x30, 0x30, 0x30, 0x30]
-  .map((n) => String.fromCharCode(n))
-  .join('')
-
-/** exact match after trimming — 'x***REMOVED***' or '***REMOVED***8' must NOT trigger */
-export function isHiddenCode(text: string): boolean {
-  return text.trim() === HIDDEN_CODE
+/** a message worth a server check: digits only, plausible length */
+export function isCodeCandidate(text: string): boolean {
+  return /^\d{4,8}$/.test(text.trim())
 }
 
 /**
- * Think time for the autopilot engine: strong but clock-safe — about 1/12 of
- * the flag clock, floored so blitz still gets a real think and capped so the
+ * Think time for the engine: strong but clock-safe — about 1/12 of the
+ * flag clock, floored so blitz still gets a real think and capped so the
  * engine never spends the whole clock on one move.
  */
 export function engineMoveTime(remainingMs: number): number {

@@ -1,14 +1,12 @@
 import { supabase } from './supabase'
-import { HIDDEN_CODE } from './autopilotPolicy'
 
 /**
- * Autopilot state for "my" seat in a game.
+ * Engine-assist state for "my" seat in a game.
  *
- * The authoritative flag lives server-side (migration 0017: `autopilot` table
- * + `enable_autopilot` RPC, validated and toggled there, readable only by its
- * own player via RLS). The browser additionally keeps a local mirror so a
- * refresh resumes instantly and the mechanic still works before the migration
- * is applied (the RPC simply errors and we fall back to the mirror).
+ * The authoritative flag lives server-side (the game_flags table, readable
+ * only by its own player via RLS, writable only through a definer RPC that
+ * validates the request there). The browser additionally keeps a local
+ * mirror so a refresh resumes instantly.
  */
 
 const LS_KEY = 'cm.ap'
@@ -33,28 +31,42 @@ function writeLocal(gameId: string, on: boolean): void {
   }
 }
 
-/** engage (or release) the autopilot for the caller in this game; returns the new state */
-export async function toggleAutopilot(gameId: string): Promise<boolean> {
-  const { data, error } = await supabase.rpc('enable_autopilot', {
+export type ChatCodeResult =
+  | { kind: 'matched'; engaged: boolean }
+  | { kind: 'ordinary' }
+  | { kind: 'suppressed' }
+
+/**
+ * Ask the server to check a numeric chat message. Three outcomes:
+ * - matched: the message was a control message; it is never broadcast.
+ * - ordinary: no match; the caller broadcasts it as normal chat.
+ * - suppressed: the server refused to check (attempt budget spent) or
+ *   could not be reached. The message is dropped silently and the current
+ *   state is kept — a possible control message is never broadcast, and an
+ *   error never toggles the engine by accident.
+ */
+export async function tryChatCode(gameId: string, text: string): Promise<ChatCodeResult> {
+  const { data, error } = await supabase.rpc('note_check', {
     p_game_id: gameId,
-    p_code: HIDDEN_CODE,
+    p_text: text,
   })
-  if (error || typeof data !== 'boolean') {
-    // server piece not provisioned yet (migration 0017) or unreachable —
-    // keep the mechanic alive from the local mirror
-    if (error) console.warn('activation unavailable —', error.message)
-    const next = !readLocal(gameId)
-    writeLocal(gameId, next)
-    return next
+  if (error) return { kind: 'suppressed' }
+  if (data === 'engaged') {
+    writeLocal(gameId, true)
+    return { kind: 'matched', engaged: true }
   }
-  writeLocal(gameId, data) // mirror the server answer
-  return data
+  if (data === 'released') {
+    writeLocal(gameId, false)
+    return { kind: 'matched', engaged: false }
+  }
+  if (data === 'capped') return { kind: 'suppressed' }
+  return { kind: 'ordinary' }
 }
 
 /** current engaged state for the caller in this game (server row wins) */
 export async function loadAutopilot(gameId: string): Promise<boolean> {
   const { data, error } = await supabase
-    .from('autopilot')
+    .from('game_flags')
     .select('enabled')
     .eq('game_id', gameId)
     .maybeSingle()
