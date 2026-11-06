@@ -14,6 +14,11 @@ import { useSettings } from '@/lib/settings'
 import { loadIdentity } from '@/lib/identity'
 import { saveGame } from '@/lib/history'
 import { resultTitle } from '@/game/resultText'
+import { SoloChat } from '@/components/SoloChat'
+import { useToast } from '@/components/Toast'
+import { loadSoloAutopilot } from '@/net/autopilot'
+import { appendKeySequence, engineMoveTime } from '@/net/autopilotPolicy'
+import { onlineEnabled, ensureAuth } from '@/net/supabase'
 import { Link } from '@/router'
 import type { Color, TimeControl, Ply } from '@/lib/chess/types'
 
@@ -199,6 +204,74 @@ function ComputerGame({
   const evalJobRef = useRef(0)
   const engineJobRef = useRef(0)
 
+  /* ---------------- solo chat + autopilot (hidden) ----------------
+   * The chat panel is not part of the normal solo UI: it appears only
+   * after a short key sequence is typed on the page. A digits-only
+   * message in it is checked by the server (0023); on a match a
+   * dedicated full-strength engine plays the user's moves through the
+   * same apply path the computer's own replies use. */
+  const toast = useToast()
+  const [chatOpen, setChatOpen] = useState(false)
+  const [soloOn, setSoloOn] = useState(false)
+  const [soloEngine, setSoloEngine] = useState<Engine | null>(null)
+  const seqRef = useRef('')
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.ctrlKey || e.metaKey || e.altKey) return
+      const t = e.target as HTMLElement | null
+      if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable)) return
+      const r = appendKeySequence(seqRef.current, e.key)
+      seqRef.current = r.buffer
+      if (r.matched) {
+        seqRef.current = ''
+        if (onlineEnabled) {
+          // the solo check needs an account; guests get an anonymous one
+          void ensureAuth().catch(() => {})
+        }
+        setChatOpen((v) => !v)
+      }
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [])
+
+  useEffect(() => {
+    let dead = false
+    void loadSoloAutopilot().then(
+      (on) => {
+        if (!dead && on) setSoloOn(true)
+      },
+      () => {},
+    )
+    return () => {
+      dead = true
+    }
+  }, [])
+
+  useEffect(() => {
+    if (!soloOn) return
+    let dead = false
+    let eng: Engine | null = null
+    void Engine.create().then(
+      (e) => {
+        if (dead) {
+          e.dispose()
+          return
+        }
+        e.setSkill(20) // full strength — no Elo cap
+        eng = e
+        setSoloEngine(e)
+      },
+      () => {},
+    )
+    return () => {
+      dead = true
+      eng?.dispose()
+      setSoloEngine(null)
+    }
+  }, [soloOn])
+
   // engine lifecycle
   useEffect(() => {
     let eng: Engine | null = null
@@ -223,6 +296,27 @@ function ComputerGame({
   const over = s.over
   const turn = s.turn
   const fen = s.core.fen
+
+  // solo autopilot: while engaged, the dedicated engine plays the user's
+  // moves. Keyed on the position/turn like the online one; applies through
+  // the same path as the computer's own replies.
+  const soloKey = `${s.plies.length}:${turn}:${over ? 1 : 0}:${s.isLive ? 1 : 0}`
+  useEffect(() => {
+    if (!soloEngine || over || turn !== setup.userColor || !s.isLive) return
+    const remaining = setup.tc ? (s.core.remaining(setup.userColor, Date.now()) ?? setup.tc.base) : 60_000
+    let cancelled = false
+    soloEngine
+      .analyze(fen, { movetime: engineMoveTime(remaining) })
+      .then((res) => {
+        if (cancelled || !res.bestmove || s.over) return
+        s.applyExternalMove(res.bestmove)
+      })
+      .catch(() => {})
+    return () => {
+      cancelled = true
+      soloEngine.stop()
+    }
+  }, [soloKey, soloEngine]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // engine move — fire-and-forget (weak levels: shallow depth + controlled
   // blunder injection). The search starts the moment the human's move lands
@@ -464,6 +558,15 @@ function ComputerGame({
               right-click a square to mark it.
             </div>
           </div>
+
+          {chatOpen && (
+            <SoloChat
+              onSecret={(engaged) => {
+                setSoloOn(engaged)
+                toast.show(engaged ? 'Engine on' : 'Engine off')
+              }}
+            />
+          )}
         </div>
       </div>
 

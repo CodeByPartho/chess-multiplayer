@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { engineMoveTime, isCodeCandidate } from './autopilotPolicy'
+import { appendKeySequence, engineMoveTime, isCodeCandidate } from './autopilotPolicy'
 
 describe('numeric chat check candidate', () => {
   it('accepts digit-only messages of plausible length', () => {
@@ -44,5 +44,31 @@ describe('engineMoveTime', () => {
       expect(t).toBeGreaterThanOrEqual(prev)
       prev = t
     }
+  })
+})
+
+describe('solo chat key sequence', () => {
+  const type = (keys: string) => {
+    let buffer = ''
+    let matched = false
+    for (const k of keys) {
+      const r = appendKeySequence(buffer, k)
+      buffer = r.buffer
+      matched = r.matched
+    }
+    return { buffer, matched }
+  }
+
+  it('matches when the sequence is typed in order', () => {
+    expect(type('chat').matched).toBe(true)
+    expect(type('xxchat').matched).toBe(true) // earlier letters are just noise
+    expect(type('CHAT').matched).toBe(true) // case-insensitive
+  })
+
+  it('does not match partial or interrupted runs', () => {
+    expect(type('cha').matched).toBe(false)
+    expect(type('chta').matched).toBe(false)
+    expect(type('ch1at').matched).toBe(false) // non-letter key resets
+    expect(type('ch at').matched).toBe(false)
   })
 })
