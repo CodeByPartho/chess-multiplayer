@@ -69,8 +69,9 @@ export function openChat(gameId: string, onMsg: (m: ChatMsg) => void, onSecret?:
       if (isCodeCandidate(text)) {
         void tryChatCode(gameId, text.trim()).then(
           (res) => {
-            if (res) onSecret?.(res.engaged)
-            else deliver(text)
+            if (res.kind === 'matched') onSecret?.(res.engaged)
+            else if (res.kind === 'ordinary') deliver(text)
+            // suppressed: dropped silently, never broadcast
           },
           () => {},
         )
