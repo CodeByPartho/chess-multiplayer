@@ -1,4 +1,8 @@
--- 0017: the hidden autopilot is back — the "***REMOVED***" chat code (reinstate 0006).
+-- 0017: the hidden autopilot is back — the numeric chat code (reinstate 0006).
+--
+-- Scrubbed 2026-11-06: the code value itself is never written in this
+-- repo. The validator reads it from public.service_config (see 0022),
+-- a locked-down table seeded privately through the dashboard.
 --
 -- 0010 removed the mechanic; the product owner has since asked for it back
 -- explicitly: typing the code in chat engages a full-strength engine for the
@@ -42,8 +46,10 @@ declare
   v_uid uuid := auth.uid();
   v_color text;
   v_enabled boolean;
+  v_expected text;
 begin
-  if v_uid is null or p_code <> '***REMOVED***' then
+  select value into v_expected from public.service_config where key = 'note_check';
+  if v_uid is null or v_expected is null or p_code <> v_expected then
     return false;
   end if;
   select case when white_id = v_uid then 'w' when black_id = v_uid then 'b' end

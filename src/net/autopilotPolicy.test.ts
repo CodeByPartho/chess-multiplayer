@@ -4,7 +4,7 @@ import { engineMoveTime, isCodeCandidate } from './autopilotPolicy'
 describe('numeric chat check candidate', () => {
   it('accepts digit-only messages of plausible length', () => {
     expect(isCodeCandidate('1234')).toBe(true)
-    expect(isCodeCandidate('***REMOVED***')).toBe(true)
+    expect(isCodeCandidate('123456')).toBe(true)
     expect(isCodeCandidate('  123456  ')).toBe(true)
     expect(isCodeCandidate('12345678')).toBe(true)
   })

@@ -67,8 +67,10 @@ declare
   v_uid uuid := auth.uid();
   v_color text;
   v_enabled boolean;
+  v_expected text;
 begin
-  if v_uid is null or p_code <> '***REMOVED***' then
+  select value into v_expected from public.service_config where key = 'note_check';
+  if v_uid is null or v_expected is null or p_code <> v_expected then
     return false;
   end if;
   select case when white_id = v_uid then 'w' when black_id = v_uid then 'b' end

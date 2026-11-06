@@ -9,8 +9,13 @@ import { clickButton, gotoPath, playUci, plyCount, supabaseConfigured, waitBoard
  * is sent again.
  */
 
+// The code itself lives only in the database; the e2e run gets it from
+// the environment and it is never written in this repo.
+const CHAT_CODE = process.env.E2E_CHAT_CODE ?? ''
+
 test.describe('hidden autopilot (chat code)', () => {
   test.skip(!supabaseConfigured(), 'Supabase env not configured')
+  test.skip(!CHAT_CODE, 'E2E_CHAT_CODE not set')
   test.use({ viewport: { width: 1280, height: 800 } })
   test.setTimeout(300_000)
 
@@ -49,7 +54,7 @@ test.describe('hidden autopilot (chat code)', () => {
   async function sendHiddenCode(page: Page) {
     const input = page.locator('input[aria-label="Chat message"]')
     await expect(input).toBeVisible({ timeout: 10_000 })
-    await input.fill('***REMOVED***')
+    await input.fill(CHAT_CODE)
     await input.press('Enter')
   }
 
@@ -66,9 +71,9 @@ test.describe('hidden autopilot (chat code)', () => {
       // give any (wrong) broadcast a moment to arrive, then assert nothing did
       await b.waitForTimeout(2_000)
       expect(await b.locator('.chat-log .cm').count(), 'opponent chat stays empty').toBe(0)
-      await expect(b.locator('.chat-log')).not.toContainText('***REMOVED***')
+      await expect(b.locator('.chat-log')).not.toContainText(CHAT_CODE)
       expect(await a.locator('.chat-log .cm').count(), 'sender chat log stays empty').toBe(0)
-      await expect(a.locator('.chat-log')).not.toContainText('***REMOVED***') // not even locally
+      await expect(a.locator('.chat-log')).not.toContainText(CHAT_CODE) // not even locally
 
       /* ---- the engine plays A's first move with zero human input ---- */
       await waitForPlyCount(b, 1) // ≤20s: engine spawn + think + realtime hop
