@@ -6,6 +6,7 @@
 // on the list; anything else gets the production origin, which the
 // browser will not accept for cross-origin reads from another site.
 const ALLOWED_ORIGINS = new Set([
+  'https://playfreechess-5a7.pages.dev',
   'https://playfreechess.netlify.app',
   'https://chess-multiplayer-788.netlify.app',
   'http://localhost:5173',
